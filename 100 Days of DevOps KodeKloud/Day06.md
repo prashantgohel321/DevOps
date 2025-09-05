@@ -88,3 +88,35 @@ The `*/5 * * * *` part can look cryptic, but it follows a simple pattern. There 
 |  |  |  |  .---- day of week (0 - 6) (Sunday to Saturday)
 |  |  |  |  |
 * * * * * <-- command to be executed
+```
+- A * means "every".
+- */5 in the minute field means "every 5th minute".
+
+> So, `*/5 * * * *` translates to: "At every 5th minute, of every hour, on every day-of-month, of every month, on every day-of-week."
+
+---
+
+### Common Pitfalls
+<a name="common-pitfalls"></a>
+
+**Editing the Wrong Crontab**: A common mistake is forgetting **`sudo`** when you intend to add a job for the root user. Running **`crontab -e`** without **`sudo`** edits the crontab for your current user (e.g., tony), not root.
+
+**Path Issues**: Cron jobs run in a very minimal environment. It's a best practice to always use absolute paths for commands and files (e.g., **`/bin/echo`** instead of echo) to avoid issues where the command isn't found.
+
+---
+
+### Exploring the Commands Used
+
+<a name="exploring-the-commands-used"></a>
+
+**`sudo yum install -y cronie`**: Installs the cron service package.
+
+**`sudo systemctl start crond`**: Starts the cron daemon for the current session.
+
+**`sudo systemctl enable crond`**: Configures the cron daemon to start automatically when the server boots.
+
+**`sudo crontab -e`**: Edits the crontab for the root user.
+
+**`sudo crontab -l`**: Lists the crontab for the root user.
+
+**`cat /tmp/cron_text`**: Displays the content of the output file to verify the job ran.
