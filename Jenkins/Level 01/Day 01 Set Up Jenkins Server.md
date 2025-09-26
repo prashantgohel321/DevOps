@@ -1,5 +1,7 @@
 # Jenkins Level 1, Task 1: My First Jenkins Server Installation
 
+<img src="diagrams/jenkins_01.png">
+
 Today, I took the first and most crucial step into the world of CI/CD by installing a Jenkins automation server. This task was a fantastic, real-world experience because it wasn't just a simple installation. I encountered and had to solve several prerequisite and dependency issues, which is a core part of any system administrator's job.
 
 This document details my entire journey, from the initial commands to the troubleshooting process and the final UI setup. I'm not just recording what I did, but why I did it and what I learned from the failures along the way.

@@ -1,5 +1,7 @@
 # Jenkins Level 1, Task 2: Managing Plugins and Conquering "Dependency Hell"
 
+<img src="diagrams/jenkins_02.png">
+
 Today's task was my first experience with managing the heart of Jenkins: its plugins. The goal was to extend Jenkins' capabilities by installing plugins for Git and GitLab, which are essential for any code-based CI/CD pipeline.
 
 This turned into an incredibly valuable, real-world troubleshooting exercise. My first attempt at installation failed spectacularly due to a complex web of dependency conflicts—a situation often called "dependency hell." This document details my journey of diagnosing the root cause from the error logs and executing a multi-step solution to fix the environment and successfully install the required plugins.

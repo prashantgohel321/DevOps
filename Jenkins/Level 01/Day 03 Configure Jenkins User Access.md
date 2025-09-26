@@ -1,5 +1,7 @@
 # Jenkins Level 1, Task 3: Granular User Permissions with Matrix Authorization
 
+<img src="diagrams/jenkins_03.png">
+
 Today's Jenkins task was a deep dive into security and user management. I moved beyond the initial setup to configuring Jenkins for a team environment. The goal was to create a new user and give them very specific, limited permissions, which is a fundamental requirement for any real-world Jenkins server.
 
 This was a fantastic exercise because it taught me the importance of the "Principle of Least Privilege." I learned how to install a new plugin to enable more powerful security options and then configure permissions at both the global (whole server) level and the project (specific job) level.

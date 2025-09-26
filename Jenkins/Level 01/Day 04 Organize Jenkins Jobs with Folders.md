@@ -1,5 +1,7 @@
 # Jenkins Level 1, Task 4: Organizing Jobs with Folders
 
+<img src="diagrams/jenkins_04.png">
+
 Today's task was a practical lesson in Jenkins administration: keeping a clean and organized dashboard. As the number of CI/CD jobs grows, a single, flat list becomes chaotic. The solution is to use folders, and this task was all about creating a folder and moving existing jobs into it.
 
 This was also another great troubleshooting experience. The feature I needed wasn't available out of the box, and I had to diagnose the problem as a missing plugin, install it, and then proceed. This document is my detailed, first-person account of that entire process.
