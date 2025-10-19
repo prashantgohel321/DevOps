@@ -1,69 +1,67 @@
-# Day 5: Installing SELinux and Handling Unexpected Issues
+<center><h1>DevOps Day 5<br>Installing SELinux and Handling Unexpected Issues</h1></center>
+<br>
 
-Day 5 was all about preparing a server for a new security implementation using SELinux (Security-Enhanced Linux). The initial task seemed simple: install the necessary tools and then disable SELinux in its configuration file so it would be off after the next reboot. However, this task turned into a valuable lesson in troubleshooting, package management, and adapting to the specific environment of a server.
+On Day 5, a server was prepared for a new security implementation using SELinux, requiring installation of necessary tools and disabling SELinux in its configuration file.
 
 ## Table of Contents
-- [The Task](#the-task)
-- [The Final Solution](#the-final-solution)
-- [My Troubleshooting Journey](#my-troubleshooting-journey)
-- [Why Did I Do This? (The "What & Why")](#why-did-i-do-this-the-what--why)
-- [Deep Dive: The `/etc/selinux/config` File](#deep-dive-the-etcselinuxconfig-file)
-- [Key Takeaways from This Task](#key-takeaways-from-this-task)
+- [Table of Contents](#table-of-contents)
+  - [The Task](#the-task)
+  - [The Final Solution](#the-final-solution)
+    - [1. Install the Correct Packages](#1-install-the-correct-packages)
+    - [2. Configure SELinux to be Disabled](#2-configure-selinux-to-be-disabled)
+  - [My Troubleshooting Journey](#my-troubleshooting-journey)
+    - [Hurdle #1: "Packages Not Installed" Error](#hurdle-1-packages-not-installed-error)
+    - [Hurdle #2: Empty Configuration File](#hurdle-2-empty-configuration-file)
+  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
+  - [Deep Dive: The `/etc/selinux/config` File](#deep-dive-the-etcselinuxconfig-file)
+  - [Key Takeaways from This Task](#key-takeaways-from-this-task)
 
 ---
 
 ### The Task
 <a name="the-task"></a>
-On `App Server 1`, I was required to:
-1.  Install the required SELinux packages.
-2.  Permanently disable SELinux by modifying its configuration file.
-3.  The change should only take effect after the next reboot; I did not need to change the live status.
+- The task involved installing `SELinux` packages, permanently disabling SELinux by modifying its configuration file, and ensuring the change only takes effect after the next reboot.
 
 ---
 
 ### The Final Solution
 <a name="the-final-solution"></a>
-After some troubleshooting, I arrived at the correct and reliable two-step process for this specific server environment.
 
 #### 1. Install the Correct Packages
-The key was to identify the exact package names for this version of Linux.
+- The key was to identify the exact package names for this version of Linux.
 
 ```bash
 sudo yum install policycoreutils selinux-policy -y
 ```
 
 **Command Breakdown:**
-* `sudo yum install -y`: Standard command to install software with admin rights and auto-confirm prompts.
-* `policycoreutils`: This package provides the core utilities to manage an SELinux environment, like `sestatus`, `setenforce`, etc.
-* `selinux-policy`: This package contains the actual set of rules (the policy) that SELinux uses. It's a crucial dependency.
+* `sudo yum install -y`: Command to install software with admin rights and auto-confirm prompts.
+* `policycoreutils`: Provides essential tools to manage SELinux, like `sestatus` and `setenforce`.
+* `selinux-policy`: Contains the rules (policy) that SELinux enforces. This package is required for SELinux to work.
 
 #### 2. Configure SELinux to be Disabled
 Next, I edited the configuration file to disable SELinux on the next boot.
 
 ```bash
 sudo vi /etc/selinux/config
-```
-Inside the file, I changed the `SELINUX` directive to `disabled`:
-```
-SELINUX=disabled
+
+# Inside the file, I changed the `SELINUX` directive to `disabled`:
+# SELINUX=disabled
 ```
 
 ---
 
 ### My Troubleshooting Journey
 <a name="my-troubleshooting-journey"></a>
-Getting to the final solution involved overcoming two main hurdles.
+I faced two main problems while setting up SELinux:
 
 #### Hurdle #1: "Packages Not Installed" Error
-My first attempt to install the packages failed. I initially tried a command that is common on older systems: `sudo yum install -y policycoreutils-python`. This resulted in an error:
-`Error: Unable to find a match: policycoreutils-python`
+- I first tried `sudo yum install -y policycoreutils-python`, which failed: “Unable to find a match.”
+- **Lesson**: Package names differ across Linux versions. The `-python` version exists in older systems (like CentOS 7), but in newer systems, the tools are bundled differently. I also needed `selinux-policy` for the validation script.
 
-**The Lesson:** Package names are not universal across all Linux distributions or even different versions of the same distribution. The `-python` suffix is used in older versions (like CentOS 7), but in this newer system, those Python utilities are bundled differently. Through trial and error, I discovered that `selinux-policy` was the other key package the validation script was looking for.
-
-#### Hurdle #2: The Empty Configuration File
-At one point, I discovered the `/etc/selinux/config` file was completely empty. An empty file would cause the system to default to `enforcing` mode, failing the task.
-
-**The Solution:** I had to create the file from scratch with the correct content. I used a "here document" to do this reliably in one command.
+#### Hurdle #2: Empty Configuration File
+- I found `/etc/selinux/config` was empty. An empty file makes the system default to enforcing mode, causing task failure.
+- **Solution**: I created the file from scratch using a here document:
 
 ```bash
 sudo bash -c 'cat > /etc/selinux/config <<EOF
@@ -72,7 +70,7 @@ SELINUX=disabled
 SELINUXTYPE=targeted
 EOF'
 ```
-This command tells the shell to take all the text between the `EOF` markers and write it directly into the `/etc/selinux/config` file. It's a fast and non-interactive way to create configuration files.
+This writes everything between `EOF` markers into the file in one go — fast, reliable, and non-interactive.
 
 ---
 
@@ -80,25 +78,22 @@ This command tells the shell to take all the text between the `EOF` markers and 
 <a name="why-did-i-do-this-the-what--why"></a>
 This task simulates a very common real-world scenario.
 
--   **What is SELinux?** It's an advanced security layer that goes beyond standard user/group permissions. It defines exactly what actions specific programs are allowed to perform. For example, it can prevent the Apache web server process from accessing files in users' home directories, even if file permissions would technically allow it.
--   **Why Install It?** To use SELinux, you need the user-space tools (`policycoreutils`) to manage it and the policies (`selinux-policy`) to apply.
--   **Why Disable It (Temporarily)?** SELinux is incredibly powerful but can be complex. Sysadmins often disable it temporarily while they are installing new applications or troubleshooting complex issues. This allows them to get the system working first, and then they can build and test a specific SELinux policy to re-enable it securely without breaking the application.
+-   **What is SELinux?** It’s a security layer beyond regular user/group permissions. It controls exactly what programs can do. For example, it can stop Apache from accessing users’ home files, even if normal permissions allow it.
+-   **Why Install It?** To use SELinux, you need the tools (`policycoreutils`) to manage it and the rules (`selinux-policy`) to enforce actions.
+-   **Why Disable It (Temporarily)?** SELinux is powerful but tricky. Admins often disable it while installing new apps or troubleshooting, so things work first. Later, they can re-enable it with proper policies without breaking the system.
 
 ---
 
 ### Deep Dive: The `/etc/selinux/config` File
 <a name="deep-dive-the-etcselinuxconfig-file"></a>
-This is the master switch for SELinux on boot. The most important directive is `SELINUX=`, which can have three values:
+This file controls SELinux at boot. The key setting is `SELINUX=`, which can be:
 
--   `enforcing`: The default and most secure mode. SELinux is active and will block any action that violates its policy.
--   `permissive`: SELinux is active, but it only logs warnings instead of blocking actions. This mode is perfect for testing and developing new policies to see what would have been denied.
--   `disabled`: SELinux is completely turned off. No policies are loaded into the kernel. This is what I set it to.
+-   `enforcing`: Default and most secure. SELinux blocks any action that breaks its rules.
+-   `permissive`: SELinux is active but only logs warnings instead of blocking actions. Good for testing policies.
+-   `disabled`: SELinux is fully off. No policies are loaded. This is what I set it to.
 
 ---
 
 ### Key Takeaways from This Task
 <a name="key-takeaways-from-this-task"></a>
--   **Always Verify Package Names:** Don't assume a package name is the same everywhere. Use `yum search` or check documentation if a package isn't found.
--   **Configuration Files are Key:** Understanding the purpose and syntax of files in `/etc/` is critical.
--   **Troubleshooting is the Real Skill:** The initial plan doesn't always work. Being able to read error messages, form a hypothesis, and test a new solution is what separates a beginner from an expert.
 - Run **`cat /etc/os-release`** to check the linux distribution name

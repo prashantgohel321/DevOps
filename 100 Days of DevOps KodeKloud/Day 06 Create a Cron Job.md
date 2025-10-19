@@ -1,34 +1,33 @@
-# DevOps Day 6: Automation with Cron Jobs
-
-Today, I took my first steps into true automation by learning about and implementing cron jobs. The task was to set up a scheduled task that would run automatically on all application servers. This is the foundation for automating routine tasks like backups, system checks, or report generation.
-
-It was a great exercise because it wasn't just about one command; it involved installing a service, ensuring it was running, and then configuring the scheduled job itself. Repeating this across multiple servers also drove home the need for future automation tools like Ansible to handle such repetitive tasks at scale.
+<center><h1>DevOps Day 6<br>Automation with Cron Jobs</h1></center>
+<br>
+Today I learned about automation by implementing `cron` jobs to set up a scheduled task for all application servers. This exercise highlighted the importance of automating routine tasks like backups, system checks, and report generation. The process involved installing a service, ensuring it was running, and configuring the scheduled job.
 
 ## Table of Contents
-- [The Task](#the-task)
-- [My Step-by-Step Solution](#my-step-by-step-solution)
-- [Why Did I Do This? (The "What & Why")](#why-did-i-do-this-the-what--why)
-- [Deep Dive: Decoding the Cron Schedule](#deep-dive-decoding-the-cron-schedule)
-- [Common Pitfalls](#common-pitfalls)
-- [Exploring the Commands Used](#exploring-the-commands-used)
+- [Table of Contents](#table-of-contents)
+  - [The Task](#the-task)
+  - [My Step-by-Step Solution](#my-step-by-step-solution)
+    - [Step 1: Install and Start the Cron Service](#step-1-install-and-start-the-cron-service)
+    - [Step 2: Add the Cron Job for the `root` User](#step-2-add-the-cron-job-for-the-root-user)
+    - [Step 3: Verification](#step-3-verification)
+  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
+  - [Deep Dive: Decoding the Cron Schedule](#deep-dive-decoding-the-cron-schedule)
+  - [Common Pitfalls](#common-pitfalls)
+  - [Exploring the Commands Used](#exploring-the-commands-used)
 
 ---
 
 ### The Task
 <a name="the-task"></a>
-My objective was to set up a simple cron job on all three Nautilus app servers (`stapp01`, `stapp02`, `stapp03`). The requirements were:
-1.  Install the `cronie` package on all app servers.
-2.  Start and enable the `crond` service.
-3.  For the `root` user on each server, add a cron job that runs every 5 minutes and executes the command `echo hello > /tmp/cron_text`.
+- The goal was to establish a `cron` job on three Nautilus `app servers`, installing the '`cronie`' package, enabling the '`crond`' service, and adding a cron job for the '`root`' user every 5 minutes, executing the command '`echo hello > /tmp/cron_text`'.
 
 ---
 
 ### My Step-by-Step Solution
 <a name="my-step-by-step-solution"></a>
-I performed the following sequence of actions on **each of the three app servers**.
+- I performed the following sequence of actions on **each of the three app servers**.
 
 #### Step 1: Install and Start the Cron Service
-First, I needed to ensure the cron daemon was installed and running.
+- First, I needed to ensure the cron daemon was installed and running.
 ```bash
 # Install the necessary package
 sudo yum install -y cronie
@@ -41,15 +40,15 @@ sudo systemctl enable crond
 ```
 
 #### Step 2: Add the Cron Job for the `root` User
-To edit the crontab for a specific user, you use `crontab -e`. To edit it for the `root` user, I had to use `sudo`.
+- To edit the `crontab` for a specific user, I used `crontab -e`. To edit it for the `root` user, I had to use `sudo`.
 ```bash
 sudo crontab -e
-```
-This opened a text editor (vi). I pressed `i` to enter insert mode and added the required line:
-```
+
+# This opened a text editor (vi). I pressed `i` to enter insert mode and added the required line:
 */5 * * * * echo hello > /tmp/cron_text
+
+# Then I pressed `Esc`, and typed `:wq` to save and quit.
 ```
-Then I pressed `Esc`, and typed `:wq` to save and quit.
 
 #### Step 3: Verification
 The most important part is making sure the job is scheduled and works correctly.
@@ -69,10 +68,10 @@ I repeated these three steps on all app servers to complete the task.
 
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
--   **`cron`**: This is the classic, time-tested utility for scheduling commands on Linux. The service that runs in the background is called the **cron daemon (`crond`)**.
--   **`cronie`**: This is the specific software package on modern Red Hat-based systems (like CentOS) that provides the `crond` service and the `crontab` command.
--   **`crontab`**: This stands for "cron table." It's a special file that contains the list of scheduled jobs. Each user can have their own crontab. Using the `crontab -e` command is the correct and safe way to edit this file, as it checks for syntax errors before saving.
--   **Running as `root`**: Many system administration tasks (like backups or updates) need to be run with elevated privileges. By using `sudo crontab -e`, I was editing the crontab for the system's most powerful user.
+-   **`cron`**: The classic Linux tool for **scheduling tasks**. The background service that runs it is called `crond`
+-   **`cronie`**: The package on modern Red Hat-based systems (like CentOS) that provides `crond` and the `crontab` command.
+-   **`crontab`**: Stands for **cron table**. It’s a file listing scheduled jobs. Each user can have their own `crontab`. Editing with `crontab -e` is safe because it checks syntax before saving.
+-   **Running as `root`**: Some tasks, like backups or updates, need admin privileges. Using `sudo crontab -e` edits the root user’s crontab, letting these tasks run with full permissions.
 
 ---
 
@@ -99,24 +98,18 @@ The `*/5 * * * *` part can look cryptic, but it follows a simple pattern. There 
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
 
-**Editing the Wrong Crontab**: A common mistake is forgetting **`sudo`** when you intend to add a job for the root user. Running **`crontab -e`** without **`sudo`** edits the crontab for your current user (e.g., tony), not root.
+**Editing the Wrong Crontab**: If you forget `sudo`, `crontab -e` edits your personal `crontab` (e.g., user tony) instead of root’s. Make sure you use `sudo` for system-level tasks.
 
-**Path Issues**: Cron jobs run in a very minimal environment. It's a best practice to always use absolute paths for commands and files (e.g., **`/bin/echo`** instead of echo) to avoid issues where the command isn't found.
+**Path Issues**: Cron runs in a minimal environment. Always use **absolute paths for commands** and files (e.g., `/bin/echo` instead of `echo`) to avoid “command not found” errors.
 
 ---
 
 ### Exploring the Commands Used
 
 <a name="exploring-the-commands-used"></a>
-
-**`sudo yum install -y cronie`**: Installs the cron service package.
-
-**`sudo systemctl start crond`**: Starts the cron daemon for the current session.
-
-**`sudo systemctl enable crond`**: Configures the cron daemon to start automatically when the server boots.
-
-**`sudo crontab -e`**: Edits the crontab for the root user.
-
-**`sudo crontab -l`**: Lists the crontab for the root user.
-
-**`cat /tmp/cron_text`**: Displays the content of the output file to verify the job ran.
+- **`sudo yum install -y cronie`**: Installs the cron service package.
+- **`sudo systemctl start crond`**: Starts the cron daemon for the current session.
+- **`sudo systemctl enable crond`**: Configures the cron daemon to start automatically when the server boots.
+- **`sudo crontab -e`**: Edits the crontab for the root user.
+- **`sudo crontab -l`**: Lists the crontab for the root user.
+- **`cat /tmp/cron_text`**: Displays the content of the output file to verify the job ran.

@@ -1,41 +1,42 @@
-# DevOps Day 10: Automating Backups with a Bash Script
+<center><h1>DevOps Day 10<br>Automating Backups with a Bash Script</h1></center>
+<br>
 
-Today's task was a practical and exciting challenge that brought together many of the skills I've been learning. I was tasked with creating a bash script to automate the process of backing up a website. This wasn't just about writing code; it was about preparing the server environment to allow the automation to run seamlessly, which is a core concept in DevOps.
-
-I learned that successful automation is often a two-part process: first, the one-time setup of prerequisites (like permissions and SSH keys), and second, the writing of the script itself. Getting the foundation right is the key to making the automation work.
+Today I was tasked with creating a bash script to automate website backup, a task that required preparing the server environment for seamless automation. Successful automation involves setting prerequisites and writing the script, which is crucial for a successful automation. Today I learned that a strong foundation is essential for successful automation.
 
 ## Table of Contents
-- [The Task](#the-task)
-- [My Step-by-Step Solution](#my-step-by-step-solution)
+- [Table of Contents](#table-of-contents)
+  - [The Task](#the-task)
+  - [My Step-by-Step Solution](#my-step-by-step-solution)
     - [Part 1: The Critical Prerequisite Setup](#part-1-the-critical-prerequisite-setup)
     - [Part 2: Writing the Backup Script](#part-2-writing-the-backup-script)
-- [Why Did I Do This? (The "What & Why")](#why-did-i-do-this-the-what--why)
-- [Deep Dive: Why Password-less SSH is Non-Negotiable for Automation](#deep-dive-why-password-less-ssh-is-non-negotiable-for-automation)
-- [Common Pitfalls](#common-pitfalls)
-- [Exploring the Commands Used](#exploring-the-commands-used)
+  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
+  - [Deep Dive: Why Password-less SSH is Non-Negotiable for Automation](#deep-dive-why-password-less-ssh-is-non-negotiable-for-automation)
+  - [Common Pitfalls](#common-pitfalls)
+  - [Exploring the Commands Used](#exploring-the-commands-used)
 
 ---
 
 ### The Task
 <a name="the-task"></a>
-My objective was to create a bash script named `news_backup.sh` on **App Server 2** that would perform a multi-step backup process. The requirements were:
-1.  The script must live in the `/scripts` directory.
-2.  It needed to create a `.zip` archive of the website's files located at `/var/www/html/news`.
-3.  The archive must be named `xfusioncorp_news.zip` and saved locally in `/backup`.
-4.  The script then had to copy this archive to the **Nautilus Backup Server** into its `/backup` directory.
-5.  Crucially, the script must run without any password prompts, and my user (`steve`) must be able to execute it.
-6.  The `zip` utility had to be installed manually before running the script.
-7.  I was not allowed to use `sudo` inside the script.
+I needed to create a bash script called `news_backup.sh` on App Server 2 to handle a multi-step backup. Requirements:
+
+1. Script location → `/scripts` directory.
+2. Backup website files → `/var/www/html/news` into a `.zip` archive.
+3. Archive name → `xfusioncorp_news.zip`, saved locally in `/backup`.
+4. Copy archive → Transfer it to the Nautilus Backup Server into `/backup`.
+5. Password-less execution → My user (`steve`) must run it without prompts.
+6. Prerequisite → zip utility must be installed manually before running the script.
+7. Restriction → No `sudo` allowed inside the script.
 
 ---
 
 ### My Step-by-Step Solution
 <a name="my-step-by-step-solution"></a>
-I broke my approach into two distinct phases: preparing the environment and then writing the script.
+- I broke my approach into two distinct phases: preparing the environment and then writing the script.
 
 #### Part 1: The Critical Prerequisite Setup
 <a name="part-1-the-critical-prerequisite-setup"></a>
-I performed these one-time setup steps on **App Server 2** as the `steve` user.
+- I performed these one-time setup steps on **App Server 2** as the `steve` user.
 
 1.  **Install `zip`:** The task required the `zip` utility for archiving.
     ```bash
@@ -66,7 +67,7 @@ I performed these one-time setup steps on **App Server 2** as the `steve` user.
 
 #### Part 2: Writing the Backup Script
 <a name="part-2-writing-the-backup-script"></a>
-With the environment fully prepared, I was ready to write the script.
+- With the environment fully prepared, I was ready to write the script.
 
 1.  **Create and Edit the Script:** I created an empty, executable file in the correct location.
     ```bash
@@ -111,31 +112,30 @@ Both verification commands showed the `xfusioncorp_news.zip` file, confirming my
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 -   **Bash Scripting:** This is the universal language for automation on Linux. By writing a script, I created a repeatable, reliable process that eliminates the chance of human error that comes with typing commands manually.
--   **`zip` Command:** Archiving is a standard part of any backup process. It compresses many files and directories into a single, manageable file, making it much easier and faster to store and transfer. The `-r` (recursive) flag was essential to include all the contents of the `news` directory.
--   **`scp` (Secure Copy):** This command copies files between servers over a secure SSH connection. It's the standard tool for simple, secure file transfers.
+-   **`zip` Command:** Compresses files into a single archive. Using `-r` ensures all contents of `/var/www/html/news` are included, making storage and transfer easier.
+-   **`scp` (Secure Copy):** Copies files between servers securely over SSH. It’s the standard tool for simple, safe file transfers.
 
 ---
 
 ### Deep Dive: Why Password-less SSH is Non-Negotiable for Automation
 <a name="deep-dive-why-password-less-ssh-is-non-negotiable-for-automation"></a>
-This task drove home a lesson I first learned on Day 7. Automation, by definition, must run without human intervention. A script that stops and waits for a password is a broken script.
+Automation must run without human intervention — a script that stops for a password is broken.
 
-The Public Key Authentication I set up is the industry-standard solution.
+- **Public Key Authentication** → The industry-standard solution.
+- **The Trust Relationship** → Using `ssh-copy-id`, I placed a “public lock” from App Server 2 onto the Backup Server.
+- The** Secure Handshake** → When `scp` runs, App Server 2 proves its identity using its private key.
+- **Seamless Execution** → The Backup Server verifies it and allows the file transfer instantly, no password needed.
 
-1.  **The Trust Relationship:** By using `ssh-copy-id`, I established a one-way trust. I placed a "public lock" from App Server 2 onto the Backup Server.
-2.  **The Secure Handshake:** When my script runs `scp`, App Server 2 uses its "private key" to prove its identity to the Backup Server.
-3.  **Seamless Execution:** The Backup Server verifies this proof and allows the file transfer to happen instantly and securely, without ever needing a password.
-
-This is the fundamental mechanism that allows tools like Ansible, Jenkins, and custom scripts to manage entire fleets of servers automatically.
+This is how tools like Ansible, Jenkins, and scripts can manage servers automatically.
 
 ---
 
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
--   **Forgetting to Install `zip`:** The script would fail immediately at the `zip` command if the package wasn't installed first.
--   **Incorrect Permissions:** If I hadn't used `chown` on the `/scripts` and `/backup` directories, my script (running as `steve`) would have failed with a "Permission denied" error when trying to create the script or the archive.
--   **Skipping the SSH Key Setup:** Without setting up the SSH keys, the `scp` command in the script would have stopped and prompted for a password, failing the automation requirement.
--   **Using `sudo` in the Script:** The task explicitly forbade this. Relying on correct ownership and permissions for the user running the script is a much cleaner and more secure approach than embedding `sudo` commands within it.
+-   **Forgetting to Install `zip`:** The script would fail immediately at the zip command.
+-   **Incorrect Permissions:** Without `chown` on `/scripts` and `/backup`, `steve` couldn’t create the script or archive, causing “Permission denied” errors.
+-   **Skipping the SSH Key Setup:** Without keys, `scp` would stop and ask for a password, breaking automation.
+-   **Using `sudo` in the Script:** Proper ownership and permissions are safer and cleaner than embedding sudo.
 
 ---
 

@@ -1,43 +1,50 @@
-# DevOps Day 9: Real-World Production Troubleshooting
+<center><h1>DevOps Day 09<br>Real-World Production Troubleshooting</h1></center>
+<br>
 
-Today's task was the most realistic production support scenario yet. I was faced with a critical application outage, traced back to a failed database service. My job wasn't to build something new, but to investigate, diagnose, and fix a complex issue under pressure.
+Today’s task felt like a real production support scenario. A critical application was down because the database service failed. My role wasn’t to create something new, but to investigate, diagnose, and fix the issue.
 
-This was a fantastic exercise in methodical troubleshooting. I followed the clues from generic error messages to detailed logs, tested hypotheses, and eventually uncovered a root cause that was several layers deeper than the initial problem suggested.
+It was a great exercise in methodical troubleshooting. I followed clues from general errors to detailed logs, tested different hypotheses, and finally found the root cause — which was deeper than it first appeared.
 
 ## Table of Contents
-- [The Task](#the-task)
-- [My Troubleshooting Journey: A Step-by-Step Solution](#my-troubleshooting-journey-a-step-by-step-solution)
-- [Why Did I Do This? (The "What & Why")](#why-did-i-do-this-the-what--why)
-- [Deep Dive: The Hierarchy of Troubleshooting](#deep-dive-the-hierarchy-of-troubleshooting)
-- [Common Pitfalls](#common-pitfalls)
-- [Exploring the Commands Used](#exploring-the-commands-used)
+- [Table of Contents](#table-of-contents)
+  - [The Task](#the-task)
+  - [My Troubleshooting Journey: A Step-by-Step Solution](#my-troubleshooting-journey-a-step-by-step-solution)
+    - [Step 1: Initial Investigation](#step-1-initial-investigation)
+    - [Step 2: Digging into the Logs](#step-2-digging-into-the-logs)
+    - [Step 3: Testing Hypotheses](#step-3-testing-hypotheses)
+    - [Step 4: Discovering the True Root Cause](#step-4-discovering-the-true-root-cause)
+    - [Step 5: The Final Solution](#step-5-the-final-solution)
+  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
+  - [Deep Dive: The Hierarchy of Troubleshooting](#deep-dive-the-hierarchy-of-troubleshooting)
+  - [Common Pitfalls](#common-pitfalls)
+  - [Exploring the Commands Used](#exploring-the-commands-used)
 
 ---
 
 ### The Task
 <a name="the-task"></a>
-The Nautilus application was down. The production support team had identified that the `mariadb` service was not running on the database server (`stdb01`). My task was to investigate the issue and bring the database service back online.
+- The Nautilus application was down. The production support team had identified that the `mariadb` service was not running on the database server (`stdb01`). My task was to investigate the issue and bring the database service back online.
 
 ---
 
 ### My Troubleshooting Journey: A Step-by-Step Solution
 <a name="my-troubleshooting-journey-a-step-by-step-solution"></a>
-My path to resolving this outage involved a multi-step investigation.
+- My path to resolving this outage involved a multi-step investigation.
 
 #### Step 1: Initial Investigation
-First, I logged into the database server (`peter@stdb01`) and confirmed the problem using `systemctl`.
+- First, I logged into the database server (`peter@stdb01`) and confirmed the problem using `systemctl`.
 ```bash
 sudo systemctl status mariadb
 # Output confirmed the service was "inactive (dead)"
 ```
-My first attempt to fix it with a simple `start` command failed, which told me the problem was not a simple crash.
+- My first attempt to fix it with a simple `start` command failed, which told me the problem was not a simple crash.
 ```bash
 sudo systemctl start mariadb
 # Output: Job for mariadb.service failed... See "journalctl -xeu mariadb.service" for details.
 ```
 
 #### Step 2: Digging into the Logs
-Following the error message's advice, I checked the detailed logs.
+- Following the error message's advice, I checked the detailed logs.
 ```bash
 journalctl -xeu mariadb.service
 ```
@@ -56,13 +63,13 @@ The logs were filled with "Operation not permitted" and "Failed to mount" errors
     ```
 
 #### Step 4: Discovering the True Root Cause
-The previous command resulted in the ultimate clue:
+- The previous command resulted in the ultimate clue:
 `ls: cannot access '/var/lib/mysql': No such file or directory`
 
-The problem wasn't wrong permissions; the entire data directory was **missing**.
+- The problem wasn't wrong permissions; the entire data directory was **missing**.
 
 #### Step 5: The Final Solution
-With the root cause identified, I executed the full recovery procedure.
+- With the root cause identified, I executed the full recovery procedure.
 1.  **Create the missing directory:**
     ```bash
     sudo mkdir /var/lib/mysql
@@ -93,9 +100,9 @@ With the root cause identified, I executed the full recovery procedure.
 
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
--   **`systemd` and `systemctl`**: `systemd` is the core service manager on modern Linux systems. `systemctl` is the command-line tool you use to interact with it. Knowing how to `start`, `stop`, `enable`, and check the `status` of services is a fundamental sysadmin skill.
--   **`journalctl`**: This is the command used to query the detailed logs collected by `systemd`. When `systemctl status` isn't enough, `journalctl` is the next logical step to find specific error messages.
--   **Root Cause Analysis**: This task was a perfect example of not just fixing the symptom (the service was down) but digging deeper to find the underlying cause (a missing directory). Simply restarting a service often doesn't work if the environment it needs to run in is broken.
+-   **`systemd` and `systemctl`**: `systemd` is the main service manager in modern Linux. `systemctl` is the tool to start, stop, enable, or check services — a core sysadmin skill.
+-   **`journalctl`**: Lets you view detailed system logs. When `systemctl status` isn’t enough, `journalctl` helps find exact error messages.
+-   **Root Cause Analysis**: This task taught me to go beyond fixing symptoms. The service was down, but the real problem was a missing directory. Restarting alone wouldn’t have solved it.
 
 ---
 
@@ -118,7 +125,6 @@ This methodical process is key to solving complex issues efficiently.
 
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
--   **Just Restarting:** Many junior admins might just try `systemctl start` over and over. If it fails, there's a deeper reason that must be investigated.
 -   **Not Reading Error Messages:** The `start` command failed but explicitly said to run `journalctl`. Ignoring this advice would leave you guessing.
 -   **Stopping at the First Clue:** The `journalctl` logs mentioned "permission denied," which could lead one to only check `chown`. But the *real* problem was a level deeper: the directory itself was gone.
 
