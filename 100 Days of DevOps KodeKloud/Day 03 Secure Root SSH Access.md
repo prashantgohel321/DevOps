@@ -14,11 +14,17 @@ On Day 3, my DevOps journey involved a crucial server hardening task, <mark> **d
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 - Following a security audit, I was tasked with disabling direct SSH root login on all app servers in Datacenter. The goal was to prevent anyone from connecting to the servers using the username `root`.
 
 ---
+
+<br>
+<br>
 
 ### My Solution & Command Breakdown
 <a name="my-solution--command-breakdown"></a>
@@ -57,6 +63,9 @@ After completing these two steps on `stapp01`, I exited and repeated the exact s
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 Turning off direct root login is one of the most basic but powerful security steps in Linux. Here’s why:
@@ -68,6 +77,9 @@ Turning off direct root login is one of the most basic but powerful security ste
 - **Encourages Safety** → Working as a normal user helps prevent accidental damage. You have to type `sudo` to gain admin rights, which forces you to stop and think before running risky commands.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: The `PermitRootLogin` Directive
 <a name="deep-dive-the-permitrootlogin-directive"></a>
@@ -82,6 +94,9 @@ The `PermitRootLogin` setting in the sshd_config file decides if the root user c
 For security, `no` is the best choice.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Files and Commands
 <a name="exploring-the-files-and-commands"></a>

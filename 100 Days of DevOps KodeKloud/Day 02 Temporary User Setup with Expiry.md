@@ -14,6 +14,9 @@ In the 100 Days of DevOps challenge, I managed temporary user access for a limit
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 A developer named `anita` needed temporary access to `App Server 3`.
@@ -21,6 +24,9 @@ A developer named `anita` needed temporary access to `App Server 3`.
 2.  Set the account to expire on **January 28, 2024**.
 
 ---
+
+<br>
+<br>
 
 ### My Solution & Command Breakdown
 <a name="my-solution--command-breakdown"></a>
@@ -53,6 +59,9 @@ This command displayed all the aging policies for the `anita` account.
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 This task shows how security policies can be automated. In real situations, many contractors or temporary workers need short-term access. Manually remembering to disable all those accounts is time-consuming and easy to forget.
@@ -62,6 +71,9 @@ This task shows how security policies can be automated. In real situations, many
 -   **Compliance Made Ease**: Many companies have rules about how long temporary users can have access. Using `--expiredate` helps enforce those rules automatically.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: How Account Expiry Works
 <a name="deep-dive-how-account-expiry-works"></a>
@@ -77,6 +89,9 @@ If needed, an admin can easily re-enable the account later by updating or removi
 👉 **Note**: This is not the same as password expiry. Password expiry only forces the user to change their password — it doesn’t disable their account.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 <a name="exploring-the-commands-used"></a>

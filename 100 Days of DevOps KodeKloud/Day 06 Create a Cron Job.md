@@ -16,11 +16,17 @@ Today I learned about automation by implementing `cron` jobs to set up a schedul
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 - The goal was to establish a `cron` job on three Nautilus `app servers`, installing the '`cronie`' package, enabling the '`crond`' service, and adding a cron job for the '`root`' user every 5 minutes, executing the command '`echo hello > /tmp/cron_text`'.
 
 ---
+
+<br>
+<br>
 
 ### My Step-by-Step Solution
 <a name="my-step-by-step-solution"></a>
@@ -66,6 +72,9 @@ I repeated these three steps on all app servers to complete the task.
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 -   **`cron`**: The classic Linux tool for **scheduling tasks**. The background service that runs it is called `crond`
@@ -74,6 +83,9 @@ I repeated these three steps on all app servers to complete the task.
 -   **Running as `root`**: Some tasks, like backups or updates, need admin privileges. Using `sudo crontab -e` edits the root user’s crontab, letting these tasks run with full permissions.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: Decoding the Cron Schedule
 <a name="deep-dive-decoding-the-cron-schedule"></a>
@@ -95,6 +107,9 @@ The `*/5 * * * *` part can look cryptic, but it follows a simple pattern. There 
 
 ---
 
+<br>
+<br>
+
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
 
@@ -103,6 +118,9 @@ The `*/5 * * * *` part can look cryptic, but it follows a simple pattern. There 
 **Path Issues**: Cron runs in a minimal environment. Always use **absolute paths for commands** and files (e.g., `/bin/echo` instead of `echo`) to avoid “command not found” errors.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 

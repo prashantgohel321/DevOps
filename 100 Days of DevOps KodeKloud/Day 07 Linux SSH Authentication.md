@@ -17,6 +17,9 @@ The task involved setting up an infrastructure for automation by configuring pas
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 My goal was to configure the `thor` user on the `jump_host` to be able to SSH into all three app servers without needing a password. The connections had to be made to the specific sudo user on each server:
@@ -25,6 +28,9 @@ My goal was to configure the `thor` user on the `jump_host` to be able to SSH in
 - `thor@jump_host` -> `banner@stapp03`
 
 ---
+
+<br>
+<br>
 
 ### My Step-by-Step Solution
 <a name="my-step-by-step-solution"></a>
@@ -71,6 +77,9 @@ exit
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 -   **Password-less is still secure**: Instead of a password that could be guessed or stolen, this method uses long, complex cryptographic keys.
@@ -80,6 +89,9 @@ exit
 -   **Automation Needs**: Scripts must run without human input. Passwords would stop a script on each server, but public key authentication lets scripts connect automatically.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: How Public Key Authentication Works
 <a name="deep-dive-how-public-key-authentication-works"></a>
@@ -92,6 +104,9 @@ It’s a secure challenge-response process — no passwords are sent over the ne
 
 ---
 
+<br>
+<br>
+
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
 -   **Setting a Passphrase:** Adding a passphrase is secure for personal use, but breaks automation. Scripts can’t enter a passphrase, so service accounts must leave it empty.
@@ -99,6 +114,9 @@ It’s a secure challenge-response process — no passwords are sent over the ne
 -   **Copying the Wrong Key:** Never copy your private key (`id_rsa`). Only the public key (`id_rsa.pub`) should be shared.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 <a name="exploring-the-commands-used"></a>

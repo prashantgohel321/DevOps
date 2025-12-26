@@ -18,11 +18,17 @@ On Day 5, a server was prepared for a new security implementation using SELinux,
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 - The task involved installing `SELinux` packages, permanently disabling SELinux by modifying its configuration file, and ensuring the change only takes effect after the next reboot.
 
 ---
+
+<br>
+<br>
 
 ### The Final Solution
 <a name="the-final-solution"></a>
@@ -51,6 +57,9 @@ sudo vi /etc/selinux/config
 
 ---
 
+<br>
+<br>
+
 ### My Troubleshooting Journey
 <a name="my-troubleshooting-journey"></a>
 I faced two main problems while setting up SELinux:
@@ -74,6 +83,9 @@ This writes everything between `EOF` markers into the file in one go — fast, r
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 This task simulates a very common real-world scenario.
@@ -84,6 +96,9 @@ This task simulates a very common real-world scenario.
 
 ---
 
+<br>
+<br>
+
 ### Deep Dive: The `/etc/selinux/config` File
 <a name="deep-dive-the-etcselinuxconfig-file"></a>
 This file controls SELinux at boot. The key setting is `SELINUX=`, which can be:
@@ -93,6 +108,9 @@ This file controls SELinux at boot. The key setting is `SELINUX=`, which can be:
 -   `disabled`: SELinux is fully off. No policies are loaded. This is what I set it to.
 
 ---
+
+<br>
+<br>
 
 ### Key Takeaways from This Task
 <a name="key-takeaways-from-this-task"></a>

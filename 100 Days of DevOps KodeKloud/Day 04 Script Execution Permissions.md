@@ -15,11 +15,17 @@ I was tasked with making a shell script executable, as the system required the n
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 The task involved granting executable permissions to a bash script named `xfusioncorp.sh` on `App Server 2` and ensuring all system users could execute it.
 
 ---
+
+<br>
+<br>
 
 ### My Solution & Command Breakdown
 <a name="my-solution--command-breakdown"></a>
@@ -62,6 +68,9 @@ ls -l /tmp/xfusioncorp.sh
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 This task is all about telling the operating system that a file is not just data to be read, but a program that can be run.
@@ -71,6 +80,9 @@ This task is all about telling the operating system that a file is not just data
 -   **Operational Need**: Automation scripts need execute permission to work. In this case, the backup system (and admins testing it) must be able to run the script. Without `+x,` the system would block it with a “Permission Denied” error, even if the script is correct.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: Understanding Linux File Permissions
 <a name="deep-dive-understanding-linux-file-permissions"></a>
@@ -90,6 +102,9 @@ A permission string like `-rwxr-xr-x` has four parts:
 So `sudo chmod 755 /tmp/xfusioncorp.sh` does the same as setting `rwxr-xr-x`.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 <a name="exploring-the-commands-used"></a>

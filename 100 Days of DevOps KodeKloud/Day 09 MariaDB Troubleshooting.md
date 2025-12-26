@@ -21,11 +21,17 @@ It was a great exercise in methodical troubleshooting. I followed clues from gen
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 - The Nautilus application was down. The production support team had identified that the `mariadb` service was not running on the database server (`stdb01`). My task was to investigate the issue and bring the database service back online.
 
 ---
+
+<br>
+<br>
 
 ### My Troubleshooting Journey: A Step-by-Step Solution
 <a name="my-troubleshooting-journey-a-step-by-step-solution"></a>
@@ -98,6 +104,9 @@ The logs were filled with "Operation not permitted" and "Failed to mount" errors
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 -   **`systemd` and `systemctl`**: `systemd` is the main service manager in modern Linux. `systemctl` is the tool to start, stop, enable, or check services — a core sysadmin skill.
@@ -105,6 +114,9 @@ The logs were filled with "Operation not permitted" and "Failed to mount" errors
 -   **Root Cause Analysis**: This task taught me to go beyond fixing symptoms. The service was down, but the real problem was a missing directory. Restarting alone wouldn’t have solved it.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: The Hierarchy of Troubleshooting
 <a name="deep-dive-the-hierarchy-of-troubleshooting"></a>
@@ -123,12 +135,18 @@ This methodical process is key to solving complex issues efficiently.
 
 ---
 
+<br>
+<br>
+
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
 -   **Not Reading Error Messages:** The `start` command failed but explicitly said to run `journalctl`. Ignoring this advice would leave you guessing.
 -   **Stopping at the First Clue:** The `journalctl` logs mentioned "permission denied," which could lead one to only check `chown`. But the *real* problem was a level deeper: the directory itself was gone.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 <a name="exploring-the-commands-used"></a>

@@ -16,6 +16,9 @@ Today I was tasked with creating a bash script to automate website backup, a tas
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 I needed to create a bash script called `news_backup.sh` on App Server 2 to handle a multi-step backup. Requirements:
@@ -29,6 +32,9 @@ I needed to create a bash script called `news_backup.sh` on App Server 2 to hand
 7. Restriction → No `sudo` allowed inside the script.
 
 ---
+
+<br>
+<br>
 
 ### My Step-by-Step Solution
 <a name="my-step-by-step-solution"></a>
@@ -109,6 +115,9 @@ Both verification commands showed the `xfusioncorp_news.zip` file, confirming my
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 -   **Bash Scripting:** This is the universal language for automation on Linux. By writing a script, I created a repeatable, reliable process that eliminates the chance of human error that comes with typing commands manually.
@@ -116,6 +125,9 @@ Both verification commands showed the `xfusioncorp_news.zip` file, confirming my
 -   **`scp` (Secure Copy):** Copies files between servers securely over SSH. It’s the standard tool for simple, safe file transfers.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: Why Password-less SSH is Non-Negotiable for Automation
 <a name="deep-dive-why-password-less-ssh-is-non-negotiable-for-automation"></a>
@@ -130,6 +142,9 @@ This is how tools like Ansible, Jenkins, and scripts can manage servers automati
 
 ---
 
+<br>
+<br>
+
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
 -   **Forgetting to Install `zip`:** The script would fail immediately at the zip command.
@@ -138,6 +153,9 @@ This is how tools like Ansible, Jenkins, and scripts can manage servers automati
 -   **Using `sudo` in the Script:** Proper ownership and permissions are safer and cleaner than embedding sudo.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 <a name="exploring-the-commands-used"></a>

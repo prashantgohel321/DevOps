@@ -16,11 +16,17 @@ The first task in the 100 Days of DevOps challenge involved <mark> **creating a 
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 - The system admin team at xFusionCorp Industries needed a user named `james` created on one of their app servers. This user account would be used by a backup agent, so for security reasons, it shouldn't be possible for a human to log in and get a command prompt with it.
 
 ---
+
+<br>
+<br>
 
 ### My Solution & Command Breakdown
 <a name="my-solution--command-breakdown"></a>
@@ -57,6 +63,9 @@ grep 'james' /etc/passwd
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 This task is all about the **Principle of Least Privilege**. A user account should only have the permissions it absolutely needs to do its job, and nothing more.
@@ -65,6 +74,9 @@ This task is all about the **Principle of Least Privilege**. A user account shou
 -   **Automation**: In DevOps, we often create service accounts for tools like Jenkins, Docker, or monitoring systems. These **accounts are meant for automated programs, not humans**. It’s a common and secure setup method.
 
 ---
+
+<br>
+<br>
 
 ### Deep Dive: What is a Non-Interactive Shell?
 <a name="deep-dive-what-is-a-non-interactive-shell"></a>
@@ -81,6 +93,9 @@ This task is all about the **Principle of Least Privilege**. A user account shou
 - Think of it like a delivery gate — a robot (automated program) can drop off packages, but if a person tries to enter, the gate instantly closes.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Directories and Files
 <a name="exploring-the-directories-and-files"></a>

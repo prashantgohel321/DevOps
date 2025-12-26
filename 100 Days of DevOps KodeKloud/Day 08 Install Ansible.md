@@ -15,11 +15,17 @@ Today, I set up my first Ansible controller, allowing me to manage servers from 
 
 ---
 
+<br>
+<br>
+
 ### The Task
 <a name="the-task"></a>
 The goal was to create an Ansible controller for `jump_host`, requiring installation of version `4.7.0`, using `pip3` exclusively, and ensuring the `ansible` command is globally available for system use.
 
 ---
+
+<br>
+<br>
 
 ### My Step-by-Step Solution
 <a name="my-step-by-step-solution"></a>
@@ -46,6 +52,9 @@ pip3 show ansible
 
 ---
 
+<br>
+<br>
+
 ### The Verification "Gotcha": `ansible` vs. `ansible-core`
 <a name="the-verification-gotcha-ansible-vs-ansible-core"></a>
 - When I first ran `ansible --version`, I was surprised by the output:
@@ -71,6 +80,9 @@ My verification was actually a success:
 
 ---
 
+<br>
+<br>
+
 ### Why Did I Do This? (The "What & Why")
 <a name="why-did-i-do-this-the-what--why"></a>
 -   **Ansible**: It's a leading configuration management tool used to automate application deployment, server provisioning, and general IT tasks. Its main advantages are its simplicity (using YAML for playbooks) and its "agentless" architecture, meaning it doesn't require special software to be installed on the managed servers—it just uses SSH.
@@ -80,6 +92,9 @@ My verification was actually a success:
 
 ---
 
+<br>
+<br>
+
 ### Common Pitfalls
 <a name="common-pitfalls"></a>
 -   **Forgetting `sudo`**: Without `sudo`, `pip3` installs Ansible only for your user, not system-wide.
@@ -87,6 +102,9 @@ My verification was actually a success:
 -   **Version Confusion**: Not realizing the difference between ansible and ansible-core can make you think the installation failed, even when it succeeded.
 
 ---
+
+<br>
+<br>
 
 ### Exploring the Commands Used
 <a name="exploring-the-commands-used"></a>

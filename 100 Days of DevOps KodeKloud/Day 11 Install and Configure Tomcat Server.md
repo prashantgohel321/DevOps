@@ -1,19 +1,19 @@
 # DevOps Day 11: Deploying a Java Application on Tomcat
 
-Today's task was a deep dive into the world of Java application deployment. I was responsible for the entire end-to-end process: setting up the application server (Apache Tomcat), configuring it to meet specific requirements, and deploying a pre-packaged web application. This was a fantastic real-world scenario that involved working across multiple servers and handling configuration files.
-
-I learned that a successful deployment is a multi-phase operation. I had to first prepare the destination server, then establish a secure connection for transferring the application, and finally, perform the deployment itself.
+Today's task involved deploying a Java application, where I set up the Apache Tomcat server, configured it, and deployed a pre-packaged web application. The deployment process included preparing the destination server, ensuring secure transfer, and executing the deployment, highlighting the multi-phase nature of application deployment.
 
 ## Table of Contents
-- [The Task](#the-task)
-- [My Step-by-Step Solution](#my-step-by-step-solution)
-    - [Phase 1: Installing and Configuring Tomcat on App Server 3](#phase-1-installing-and-configuring-tomcat-on-app-server-3)
-    - [Phase 2: Preparing for Secure File Transfer](#phase-2-preparing-for-secure-file-transfer)
-    - [Phase 3: Deploying the Web Application](#phase-3-deploying-the-web-application)
-- [Why Did I Do This? (The "What & Why")](#why-did-i-do-this-the-what--why)
-- [Deep Dive: The Magic of `ROOT.war`](#deep-dive-the-magic-of-rootwar)
-- [Common Pitfalls](#common-pitfalls)
-- [Exploring the Commands Used](#exploring-the-commands-used)
+- [DevOps Day 11: Deploying a Java Application on Tomcat](#devops-day-11-deploying-a-java-application-on-tomcat)
+  - [Table of Contents](#table-of-contents)
+    - [The Task](#the-task)
+    - [My Step-by-Step Solution](#my-step-by-step-solution)
+      - [Phase 1: Installing and Configuring Tomcat on App Server 3](#phase-1-installing-and-configuring-tomcat-on-app-server-3)
+      - [Phase 2: Preparing for Secure File Transfer](#phase-2-preparing-for-secure-file-transfer)
+      - [Phase 3: Deploying the Web Application](#phase-3-deploying-the-web-application)
+    - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
+    - [Deep Dive: The Magic of `ROOT.war`](#deep-dive-the-magic-of-rootwar)
+    - [Common Pitfalls](#common-pitfalls)
+    - [Exploring the Commands Used](#exploring-the-commands-used)
 
 ---
 
@@ -37,15 +37,15 @@ I broke my solution into three logical phases to ensure a smooth and error-free 
 First, I prepared the destination server.
 
 1.  **Connect and Install:** I logged into App Server 3 (`banner@stapp03`) and used `yum` to install the Tomcat package.
-    ```bash
-    sudo yum install -y tomcat
-    ```
+```bash
+sudo yum install -y tomcat
+```
 
 2.  **Configure the Port:** This was a critical configuration change. I edited Tomcat's main configuration file, `server.xml`, with `vi`.
-    ```bash
-    sudo vi /etc/tomcat/server.xml
-    ```
-    Inside the file, I searched for the `Connector` tag and changed its port attribute from `8080` to `8084`.
+```bash
+sudo vi /etc/tomcat/server.xml
+```
+> Inside the file, I searched for the `Connector` tag and changed its port attribute from `8080` to `8084`.
 
 3.  **Start and Enable the Service:** Finally, I started the Tomcat service and enabled it to ensure it would restart automatically after a reboot.
     ```bash
