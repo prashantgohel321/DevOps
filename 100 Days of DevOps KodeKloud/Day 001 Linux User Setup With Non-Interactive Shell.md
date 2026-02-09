@@ -1,53 +1,67 @@
-<center><h1>DevOps Day 1<br>Creating a User with a Non-Interactive Shell</h1></center>
+# DevOps Day 01: Creating a User with a Non-Interactive Shell
 
-<br>
+This document explains a very common real-world DevOps task: creating a Linux user account that is not meant for human login. The task looks small, but it touches core ideas of Linux security, automation, and how operating systems control access. This kind of user is typically created for background services, agents, and automated tools rather than for people.
 
-The first task in the 100 Days of DevOps challenge involved <mark> **creating a new user** </mark>  for a backup agent tool on `App Server 1`, requiring a non-interactive shell.
-
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-  - [The Task](#the-task)
-  - [My Solution \& Command Breakdown](#my-solution--command-breakdown)
-    - [1. The Creation Command](#1-the-creation-command)
-    - [2. The Verification Command](#2-the-verification-command)
-  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
-  - [Deep Dive: What is a Non-Interactive Shell?](#deep-dive-what-is-a-non-interactive-shell)
-  - [Exploring the Directories and Files](#exploring-the-directories-and-files)
+The scenario here involves creating a user named `james` on an application server for a backup agent. Since a backup agent runs automatically and does not require a human to type commands, the user must exist without allowing interactive login.
 
 ---
 
 <br>
 <br>
 
-### The Task
-<a name="the-task"></a>
-- The system admin team at xFusionCorp Industries needed a user named `james` created on one of their app servers. This user account would be used by a backup agent, so for security reasons, it shouldn't be possible for a human to log in and get a command prompt with it.
+- [DevOps Day 01: Creating a User with a Non-Interactive Shell](#devops-day-01-creating-a-user-with-a-non-interactive-shell)
+  - [The Actual Requirement](#the-actual-requirement)
+  - [The Command Used and Why It Solves the Task](#the-command-used-and-why-it-solves-the-task)
+  - [Verifying That the User Exists and Is Restricted](#verifying-that-the-user-exists-and-is-restricted)
+  - [Why This Approach Is Used in Real Systems](#why-this-approach-is-used-in-real-systems)
+  - [How Non-Interactive Shells Work Internally](#how-non-interactive-shells-work-internally)
+  - [Files and Directories Involved in This Process](#files-and-directories-involved-in-this-process)
+  - [Additional Commands to Explore and Learn More](#additional-commands-to-explore-and-learn-more)
+  - [Key Takeaway](#key-takeaway)
+
+
+<br>
+<br>
+
+## The Actual Requirement
+
+The system administration team required a user called `james` to be present on App Server 1. This user would be used by a backup agent process. From a security perspective, allowing someone to log in as this user and obtain a shell prompt would be unnecessary and risky. Therefore, the user must exist in the system but must not be able to start a shell session.
+
+This requirement directly maps to how Linux controls user access using login shells.
 
 ---
 
 <br>
 <br>
 
-### My Solution & Command Breakdown
-<a name="my-solution--command-breakdown"></a>
-- After connecting to `App Server 1` using SSH, I ran a single command to accomplish the entire task.
+## The Command Used and Why It Solves the Task
 
-#### 1. The Creation Command
-- This command creates the user and sets their shell at the same time.
+After connecting to the server using SSH with administrative access, a single command was sufficient to both create the user and restrict its login behavior.
 
 ```bash
 sudo useradd james -s /sbin/nologin
 ```
 
-**Command Breakdown:**
-* `sudo`: Means “Super User Do.” It lets you run commands with admin power. Since creating users needs higher permission, we use sudo to do it safely.
-* `useradd`: Linux command for adding a new user account.
-* `james`: This is the username I was asked to create.
-* `-s`: This is a flag or an "option" for Shell. It tells the `useradd` command which login shell the new user should have.
-* `/sbin/nologin`: A special shell that blocks the user from logging in. It’s often used for system or service accounts that don’t need direct access.
+This command works because `useradd` is responsible for registering new users in the system’s user database, and the `-s` option allows control over which program is executed when that user attempts to log in.
 
-#### 2. The Verification Command
-- I used `grep` to check the system's user file.
+The word `sudo` temporarily grants administrative privileges. User creation modifies system files such as `/etc/passwd`, which are protected and cannot be changed by normal users. Without sudo, the command would fail.
+
+The `useradd` utility creates a new user entry, assigns a user ID, group ID, home directory, and default settings unless told otherwise.
+
+The name `james` becomes the login identifier for the account.
+
+The `-s` option specifies the **login shell**. A **login shell** is not just a preference; it is the exact program the system runs after authentication succeeds. By setting this shell to `/sbin/nologin`, the system is instructed to deny any interactive session immediately after authentication.
+
+The program `/sbin/nologin` is a small system binary whose only job is to print a message and terminate the session. No prompt is shown and no commands can be executed.
+
+---
+
+<br>
+<br>
+
+## Verifying That the User Exists and Is Restricted
+
+After creating the user, the safest way to confirm the result is to inspect the system’s user database indirectly.
 
 ```bash
 grep 'james' /etc/passwd
@@ -56,50 +70,93 @@ grep 'james' /etc/passwd
 # james:x:1002:1002::/home/james:/sbin/nologin
 ```
 
-**Command Breakdown:**
-* `grep`: Command-line tool **for searching plain-text data** for lines that match a regular expression or a simple string.
-* `'james'`: Search string. I was telling `grep` to find any line containing the word "james".
-* `/etc/passwd`: This is the file I wanted to search in. It's a system file that contains the list of all user accounts.
+The `grep` command scans text files and prints lines that match a given string. Here, it searches for any line containing the word `james`.
+
+The file `/etc/passwd` stores one line per user account. Each line is structured using colon separators. Reading the output from left to right shows the username, internal identifiers, the home directory path, and finally the login shell.
+
+The presence of `/sbin/nologin` at the end of the line confirms that the user cannot obtain an interactive shell.
 
 ---
 
 <br>
 <br>
 
-### Why Did I Do This? (The "What & Why")
-<a name="why-did-i-do-this-the-what--why"></a>
-This task is all about the **Principle of Least Privilege**. A user account should only have the permissions it absolutely needs to do its job, and nothing more.
+## Why This Approach Is Used in Real Systems
 
--   **Security**: The backup agent doesn’t need a person to log in; it **just needs permission to run tasks and own files**. By giving it a non-interactive shell, we make sure no one (not even by accident) can use this account to access the server directly.
--   **Automation**: In DevOps, we often create service accounts for tools like Jenkins, Docker, or monitoring systems. These **accounts are meant for automated programs, not humans**. It’s a common and secure setup method.
+This task is a direct application of the principle of least privilege. A system account should have only the permissions required to perform its function and nothing more.
 
----
+A backup agent needs file ownership, read access, and sometimes execution permission to run scheduled jobs. It does not need a human-operated terminal session. Allowing interactive login would expand the attack surface of the server.
 
-<br>
-<br>
+In DevOps environments, many tools rely on similar users. Continuous integration servers, container runtimes, monitoring agents, and schedulers often run under dedicated users that exist purely so processes have an identity. These users are designed for automation, not for people.
 
-### Deep Dive: What is a Non-Interactive Shell?
-<a name="deep-dive-what-is-a-non-interactive-shell"></a>
-- To understand this, let’s first see what an **interactive shell** is.
-- When you log in to a Linux server, the system runs a program like `/bin/bash`. This shell is interactive — it shows you a prompt (`$`), waits for your commands, runs them, and displays the output.
-- A **non-interactive shell** is the opposite.
-- When a user’s shell is set to `/sbin/nologin`, here’s what happens:
-  1.  Someone (or a program) tries to log in as `james`.
-  2.  The system checks `/etc/passwd` and sees that james has `/sbin/nologin` as the shell.
-  3.  It runs `/sbin/nologin`, which shows a message like “This account is currently not available.”.
-  4.  Then it ends the session immediately.
-
-- This type of shell never gives a command prompt.
-- Think of it like a delivery gate — a robot (automated program) can drop off packages, but if a person tries to enter, the gate instantly closes.
+Restricting the shell reduces risk while still allowing the system to operate normally.
 
 ---
 
 <br>
 <br>
 
-### Exploring the Directories and Files
-<a name="exploring-the-directories-and-files"></a>
+## How Non-Interactive Shells Work Internally
 
-* `/etc/passwd`: A text file that **stores details of all users on the system**. Each line represents one user, with information separated by colons (:). The line for `james` shows all his basic account details.
-* `/home/james`: This is the home directory created for the `james` user. It’s a personal space where the user (or backup agent) can store logs, config files, or other data.
-* `/sbin/`: Short for **System Binaries**. This folder contains core programs needed for the system to start and run. Since `nologin` is located here, it’s treated as an important system-level tool, not a regular user command.
+When a user attempts to log in, Linux does not automatically start a command prompt. Instead, it checks the user’s entry in `/etc/passwd` to determine which program should run after authentication.
+
+For a normal human user, this program is usually `/bin/bash` or another shell. Bash starts, prints a prompt, and waits for commands. This is known as an interactive shell because it is designed for continuous back-and-forth interaction.
+
+For the `james` user, the system finds `/sbin/nologin` as the login shell. After authentication, the system executes this program instead of bash. The program displays a short message indicating that the account is not available and then exits. Because the program exits immediately, the session ends without ever reaching a command prompt.
+
+From the operating system’s perspective, this behavior is intentional and clean. Authentication succeeds, but interaction is deliberately blocked.
+
+---
+
+<br>
+<br>
+
+## Files and Directories Involved in This Process
+
+The file `/etc/passwd` is a foundational system file that lists all user accounts. It does not store passwords but defines how each user is identified and which shell they are allowed to run.
+
+The directory `/home/james` is the home directory assigned to the user. Even though the user cannot log in interactively, processes running as this user may still read from or write to this directory. Backup tools often store configuration or runtime data here.
+
+The directory `/sbin` contains essential system binaries. Programs located here are usually intended for administrative or system-level tasks. The placement of `nologin` in this directory signals that it is part of core system control rather than a regular user utility.
+
+---
+
+<br>
+<br>
+
+## Additional Commands to Explore and Learn More
+
+To confirm whether a user can log in interactively, you can inspect the shell field directly:
+
+```bash
+getent passwd james
+```
+
+To list all users that have non-interactive shells:
+
+```bash
+grep -E 'nologin|false' /etc/passwd
+```
+
+To create a system user without a home directory:
+
+```bash
+sudo useradd -r -s /sbin/nologin backup_agent
+```
+
+To prevent login using `/bin/false` instead of `nologin`:
+
+```bash
+sudo useradd testuser -s /bin/false
+```
+
+Exploring these variations helps build a deeper understanding of how Linux distinguishes between human users and service accounts.
+
+---
+
+<br>
+<br>
+
+## Key Takeaway
+
+Creating a user with a non-interactive shell is not a trick or shortcut. It is a deliberate security pattern used across production systems. By controlling the shell, Linux controls access. This single design choice allows automation tools to function while preventing accidental or malicious human access. Understanding this concept early makes many advanced DevOps practices easier to reason about later.
