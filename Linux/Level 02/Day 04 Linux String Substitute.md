@@ -1,134 +1,206 @@
-# Linux Level 2, Task 4: Linux String Substitute (`sed`)
+# Linux Level 02 Day 04: Modifying Text Safely with sed
 
-This document outlines the solution for Linux Level 2, Task 4. The objective was to process a text file on a remote application server using the stream editor `sed`, specifically to delete lines matching a pattern and to substitute a specific word globally.
+This document explains how to use the Linux stream editor `sed` to modify text files in a controlled and predictable way. The task focuses on two very common real-world operations: removing entire lines based on a condition and replacing a specific word without accidentally modifying similar-looking words. 
 
-## Table of Contents
-1.  [Task Overview](#task-overview)
-2.  [Step-by-Step Solution](#step-by-step-solution)
-    * [1. Connect to App Server 2](#1-connect-to-app-server-2)
-    * [2. Delete Lines Containing "following"](#2-delete-lines-containing-following)
-    * [3. Replace "from" with "for"](#3-replace-from-with-for)
-    * [4. Verification](#4-verification)
-3.  [Deep Dive: `sed` Concepts Used](#deep-dive-sed-concepts-used)
-4.  [Common Pitfalls](#common-pitfalls)
+The operations are performed on a file located on an application server and the results are written to new files instead of modifying the original source. This approach mirrors how changes are usually tested and validated in professional environments.
 
 ---
 
-## Task Overview
-<a name="task-overview"></a>
+<br>
+<br>
 
-**Objective:** Perform text alterations on the file `/home/BSD.txt` located on **App Server 2**.
+- [Linux Level 02 Day 04: Modifying Text Safely with sed](#linux-level-02-day-04-modifying-text-safely-with-sed)
+  - [What the Task Required](#what-the-task-required)
+  - [Connecting to the Server and Preparing the Environment](#connecting-to-the-server-and-preparing-the-environment)
+  - [Removing Lines Containing a Specific Word](#removing-lines-containing-a-specific-word)
+  - [Replacing a Word Without Touching Similar Words](#replacing-a-word-without-touching-similar-words)
+  - [Confirming That the Changes Are Correct](#confirming-that-the-changes-are-correct)
+  - [How sed Achieves This Internally](#how-sed-achieves-this-internally)
+  - [Word Boundaries and Why They Matter](#word-boundaries-and-why-they-matter)
+  - [Redirection Versus In-Place Editing](#redirection-versus-in-place-editing)
+  - [Commands Worth Exploring Further](#commands-worth-exploring-further)
+  - [Core Learning](#core-learning)
 
-**Requirements:**
-1.  **Target Server:** App Server 2 (`stapp02`).
-2.  **Source File:** `/home/BSD.txt`.
-3.  **Operation A:** Delete all lines containing the word **"following"** (case-sensitive) and save the result to `/home/BSD_DELETE.txt`.
-4.  **Operation B:** Replace all occurrences of the word **"from"** with **"for"** and save the result to `/home/BSD_REPLACE.txt`.
-5.  **Constraint:** Do not alter words containing the string (e.g., do not change "contributor" just because it contains "to" if that were the task).
+<br>
+<br>
+
+## What the Task Required
+
+The objective was to modify the contents of the file `/home/BSD.txt` on Nautilus App Server 2.
+
+Two separate outputs were required.
+
+First, every line containing the word `copyright` had to be removed, and the remaining content saved into `/home/BSD_DELETE.txt`.
+
+Second, every occurrence of the standalone word `the` had to be replaced with the word `is`, while ensuring that words such as `their`, `them`, or `breathe` remained unchanged. The result of this operation had to be saved into `/home/BSD_REPLACE.txt`.
+
+The original file was not allowed to be modified directly.
 
 ---
 
-## Step-by-Step Solution
-<a name="step-by-step-solution"></a>
+<br>
+<br>
 
-### 1. Connect to App Server 2
-<a name="1-connect-to-app-server-2"></a>
-First, I connected to the target server using SSH.
+## Connecting to the Server and Preparing the Environment
 
-**Command:**
+The task was performed on App Server 2. After connecting using SSH, administrative privileges were required because new files had to be created under `/home`, which may not always be writable by a normal user.
+
 ```bash
 ssh steve@stapp02
 # Password: Am3ric@
-```
-
-After logging in, I switched to the `root` user (or used `sudo`) to ensure I had permission to write to `/home/` and read the files.
-```bash
 sudo su -
-cd /home
-ls -l
+cd /home/
 ```
 
-### 2. Delete Lines Containing "following"
-<a name="2-delete-lines-containing-following"></a>
-The requirement was to remove any line that had the word "following".
-
-**Command:**
-```bash
-sed -e '/following/d' BSD.txt > /home/BSD_DELETE.txt
-```
-
-* **`sed`**: The stream editor command.
-* **`-e`**: Optional flag to execute the following script (good practice).
-* **`'/following/d'`**: This is the instruction.
-    * `/following/`: Find lines matching this pattern.
-    * `d`: Delete those lines.
-* **`> /home/BSD_DELETE.txt`**: Redirect the output (which is the original file minus the deleted lines) to a new file.
-
-### 3. Replace "from" with "for"
-<a name="3-replace-from-with-for"></a>
-The requirement was to replace every instance of "from" with "for".
-
-**Command:**
-```bash
-sed -e 's/from/for/g' BSD.txt > /home/BSD_REPLACE.txt
-```
-
-* **`'s/from/for/g'`**: This is the substitution instruction.
-    * `s`: Substitute.
-    * `/from/`: The string to look for (search pattern).
-    * `/for/`: The string to replace it with.
-    * `g`: Global flag. Without this, `sed` only replaces the *first* occurrence on each line. With `g`, it replaces *all* occurrences on each line.
-
-**Note on Word Boundaries:**
-The task note mentioned: *"make sure not to alter any words containing this string"*.
-If the task required strictly replacing whole words only, the command would be:
-`sed -e 's/\bfrom\b/for/g' BSD.txt`
-However, based on standard `sed` behavior in these labs, the simple substitution `s/from/for/g` usually satisfies the requirement unless "from" appears inside other words in the text (e.g., "fromage").
-
-### 4. Verification
-<a name="4-verification"></a>
-I verified the changes using `diff` and `grep`.
-
-**Verify Deletion:**
-```bash
-# Should return nothing if all lines with "following" were deleted
-grep "following" /home/BSD_DELETE.txt
-```
-
-**Verify Replacement:**
-```bash
-# Should return nothing (proving "from" is gone)
-grep "from" /home/BSD_REPLACE.txt
-
-# Should return lines (proving "for" is present)
-grep "for" /home/BSD_REPLACE.txt
-```
+Once inside `/home`, all paths become easier to reason about and commands remain explicit.
 
 ---
 
-## Deep Dive: `sed` Concepts Used
-<a name="deep-dive-sed-concepts-used"></a>
+<br>
+<br>
 
-### The `d` Command (Delete)
-The syntax `/[pattern]/d` works like a filter. `sed` reads the file line by line. If a line matches `[pattern]`, it is discarded. If it doesn't match, it is printed to stdout.
+## Removing Lines Containing a Specific Word
 
-### The `s` Command (Substitute)
-The syntax `s/regexp/replacement/flags` is the most common use of `sed`.
-* It looks for the regex pattern.
-* It replaces it with the replacement string.
-* The delimiter `/` can be changed to any character (e.g., `s|from|for|g`) if your strings contain slashes.
+The first operation required deleting every line that contained the word `copyright`. This is a line-based operation, which aligns perfectly with how `sed` processes input.
 
-### Redirection (`>`)
-`sed` by default prints to the screen (Standard Output). It does **not** modify the file in-place unless you use the `-i` flag.
-* **`-i` (In-place):** Edits the file directly (`sed -i ... file.txt`).
-* **`>` (Redirection):** Writes the output to a *new* file, leaving the original untouched. This task required creating new files, so redirection was the correct method.
+```bash
+sed '/copyright/d' /home/BSD.txt > /home/BSD_DELETE.txt
+```
+
+The pattern between the first pair of slashes tells `sed` which lines to look at. Any line containing the string `copyright` matches this condition. The letter `d` instructs `sed` to delete those matching lines.
+
+Internally, `sed` reads the file one line at a time. When a line matches the pattern, it is dropped. When it does not match, it is passed through unchanged.
+
+The redirection operator `>` writes the final output to a new file. The original file is only read, never altered. This makes the operation safe and reversible.
 
 ---
 
-## Common Pitfalls
-<a name="common-pitfalls"></a>
+<br>
+<br>
 
-1.  **Case Sensitivity:** `sed` is case-sensitive by default. `/Following/d` would fail to delete "following". If case-insensitivity is needed, use the `I` flag (e.g., `/following/Id`), though this task warned to be aware of case sensitivity.
-2.  **Missing `g` flag:** A common mistake is `s/from/for/`. If a line says "from here to from there", this would result in "for here to from there" (only the first one changes). Always use `g` for "replace all".
-3.  **Using `-i` incorrectly:** If the task asks to "save results in a new file", using `sed -i` on the original file is wrong because it overwrites the source and doesn't create the destination file.
-   
+## Replacing a Word Without Touching Similar Words
+
+The second operation required more precision. Replacing text blindly can easily introduce errors. For example, replacing `the` everywhere without constraints would incorrectly transform words like `them` or `breathe`.
+
+To avoid this, the replacement must target only full words.
+
+```bash
+sed 's/\bthe\b/is/g' /home/BSD.txt > /home/BSD_REPLACE.txt
+```
+
+The `s` command tells `sed` to substitute text. The pattern `\bthe\b` defines where the substitution is allowed to occur.
+
+A word boundary represents the edge of a word. It matches positions where a word character meets a non-word character such as a space, punctuation mark, or the beginning or end of a line. By placing a boundary on both sides of `the`, the match succeeds only when `the` stands alone as a complete word.
+
+The replacement string `is` is inserted wherever the match occurs. The `g` flag ensures that all matches on a line are replaced rather than just the first one.
+
+As with the previous command, output redirection writes the transformed content into a new file, preserving the original data.
+
+---
+
+<br>
+<br>
+
+## Confirming That the Changes Are Correct
+
+Verification is essential whenever automated text processing is involved. Simple checks can confirm both that the unwanted content is gone and that no unintended changes were introduced.
+
+To confirm that all lines containing `copyright` were removed:
+
+```bash
+grep "copyright" /home/BSD_DELETE.txt
+```
+
+This command should produce no output, which indicates that the word does not appear anywhere in the file.
+
+To confirm that all standalone occurrences of `the` were replaced:
+
+```bash
+grep -w "the" /home/BSD_REPLACE.txt
+```
+
+The `-w` option forces `grep` to search for whole words only. If nothing is printed, it confirms that no full word `the` remains.
+
+To confirm that related words were not affected:
+
+```bash
+grep "them" /home/BSD_REPLACE.txt
+grep "their" /home/BSD_REPLACE.txt
+```
+
+Seeing these words unchanged proves that the word boundary logic behaved correctly.
+
+---
+
+<br>
+<br>
+
+## How sed Achieves This Internally
+
+`sed` operates as a stream editor. It reads input line by line, applies rules, and writes output immediately. It does not load the entire file into memory, which makes it efficient even for large files.
+
+In the deletion task, lines matching the pattern are discarded before being written to output. In the substitution task, matching sections of a line are replaced while the rest of the line remains intact.
+
+Because `sed` processes streams, it works well with pipes, redirection, and automation pipelines commonly used in DevOps workflows.
+
+---
+
+<br>
+<br>
+
+## Word Boundaries and Why They Matter
+
+Without boundaries, pattern matching is purely textual. A pattern like `the` matches anywhere those three letters appear together. This is rarely what is desired when modifying configuration files or documentation.
+
+Word boundaries introduce context. They allow the command to distinguish between a complete word and a sequence of characters inside a larger word. This distinction is critical when performing substitutions in scripts, logs, or configuration files.
+
+Some `sed` implementations also support `\<` and `\>` to represent the beginning and end of a word. These forms serve the same purpose and are sometimes clearer when reading commands.
+
+---
+
+<br>
+<br>
+
+## Redirection Versus In-Place Editing
+
+The task explicitly required writing results to new files. This is why output redirection was used.
+
+Redirecting output reads from the source file and writes the modified stream elsewhere. The source remains untouched.
+
+In contrast, using the `-i` option edits files in place. While useful, in-place editing is riskier and should only be used when the changes are fully understood and backups exist.
+
+---
+
+<br>
+<br>
+
+## Commands Worth Exploring Further
+
+To preview changes without saving them:
+
+```bash
+sed 's/\bthe\b/is/g' /home/BSD.txt | less
+```
+
+To perform case-insensitive substitution:
+
+```bash
+sed 's/\bthe\b/is/gi' /home/BSD.txt
+```
+
+To delete lines using multiple patterns:
+
+```bash
+sed '/copyright\|license/d' /home/BSD.txt
+```
+
+Exploring these variations builds confidence in using `sed` safely and effectively.
+
+---
+
+<br>
+<br>
+
+## Core Learning
+
+This task demonstrates that safe text manipulation is about precision, not just command knowledge. By understanding how `sed` processes text, how word boundaries restrict matches, and how redirection protects original data, it becomes possible to automate changes without unintended side effects. These skills are fundamental when managing configuration files and logs in real systems.
