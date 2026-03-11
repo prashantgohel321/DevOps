@@ -1,105 +1,299 @@
-<center><h1>Day 3: Disabling Direct Root SSH Login</h1></center>
-<br>
-On Day 3, my DevOps journey involved a crucial server hardening task, <mark> **disabling root user login via SSH** </mark>, which is a crucial step for securing a new server across all three app servers.
+# DevOps Day 03 — Disabling Direct Root SSH Login 
 
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-  - [The Task](#the-task)
-  - [My Solution \& Command Breakdown](#my-solution--command-breakdown)
-    - [1. Editing the SSH Configuration File](#1-editing-the-ssh-configuration-file)
-    - [2. Restarting the SSH Service](#2-restarting-the-ssh-service)
-  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
-  - [Deep Dive: The `PermitRootLogin` Directive](#deep-dive-the-permitrootlogin-directive)
-  - [Exploring the Files and Commands](#exploring-the-files-and-commands)
+<br>
+<br>
+
+- [DevOps Day 03 — Disabling Direct Root SSH Login](#devops-day-03--disabling-direct-root-ssh-login)
+  - [Real Scenario](#real-scenario)
+- [Understanding the Requirement](#understanding-the-requirement)
+- [How SSH Login Works Internally](#how-ssh-login-works-internally)
+- [Step 1 — Editing the SSH Configuration](#step-1--editing-the-ssh-configuration)
+- [Step 2 — Restarting the SSH Service](#step-2--restarting-the-ssh-service)
+- [Understanding the SSH Daemon](#understanding-the-ssh-daemon)
+- [Why Disabling Root SSH Login Is Important](#why-disabling-root-ssh-login-is-important)
+- [Understanding the PermitRootLogin Directive](#understanding-the-permitrootlogin-directive)
+- [Additional Useful Commands](#additional-useful-commands)
+- [Practical Outcome](#practical-outcome)
+
+<br>
+<br>
+
+## Real Scenario
+
+- When a Linux server is connected to a network, especially the internet, one of the first services exposed is usually **SSH (Secure Shell)**. SSH allows administrators to connect to the server remotely and manage it from another machine.
+
+- However, SSH also becomes a primary target for attackers. Automated bots constantly scan servers and attempt to log in by guessing usernames and passwords. The most common target is the **root account**, because every Linux system has it and it has unlimited privileges.
+
+- For this reason, a common security hardening practice is to **disable direct root login via SSH**. Instead of logging in as root, administrators log in using their personal accounts and then elevate privileges using `sudo`.
+
+- In this task, the objective was to disable root login through SSH on all application servers.
 
 ---
 
 <br>
 <br>
 
-### The Task
-<a name="the-task"></a>
-- Following a security audit, I was tasked with disabling direct SSH root login on all app servers in Datacenter. The goal was to prevent anyone from connecting to the servers using the username `root`.
+# Understanding the Requirement
+
+**The security team requested the following change:**
+
+* Prevent users from logging in via SSH using the **root** account.
+* Apply this configuration across all application servers.
+
+The root account is the most powerful account in Linux. It has unrestricted access to the entire system, meaning it can modify any file, install software, change system configuration, or delete critical data.
+
+Allowing direct root login increases risk because attackers only need to guess one username: `root`.
+
+By disabling root login, the attack surface is reduced.
 
 ---
 
 <br>
 <br>
 
-### My Solution & Command Breakdown
-<a name="my-solution--command-breakdown"></a>
-- I had to repeat the same process on each of the three servers. The process involved editing a single configuration file and then restarting the SSH service.
+# How SSH Login Works Internally
 
-#### 1. Editing the SSH Configuration File
-- First, I connected to each server via SSH using my personal user account. Then, I used a text editor (`vi`) with `sudo` to modify the main SSH daemon configuration file.
+When a user connects to a server using SSH, several steps occur internally.
+
+1. The SSH client sends a connection request to the SSH server.
+2. The SSH daemon (`sshd`) running on the server receives the request.
+3. The daemon checks the configuration rules defined in `/etc/ssh/sshd_config`.
+4. If the configuration allows the login attempt, authentication begins.
+5. If authentication succeeds, the user is granted a shell session.
+
+Because of this design, controlling SSH access is mostly done through the **sshd configuration file**.
+
+---
+
+<br>
+<br>
+
+# Step 1 — Editing the SSH Configuration
+
+**The configuration for the SSH server is stored in the file:**
+
+```bash
+/etc/ssh/sshd_config
+```
+
+This file controls how the SSH daemon behaves.
+
+**To edit it, the following command is used:**
 
 ```bash
 sudo vi /etc/ssh/sshd_config
 ```
 
-**Command Breakdown:**
-* `vi`: The text editor I used to make the change.
-* `/etc/ssh/sshd_config`: Configuration file for the SSH *server* (the `d` in `sshd` stands for daemon, which is a background service).
+**Explanation of the command:**
 
-Inside this file, I searched for the line containing `PermitRootLogin`. I found it commented out and set to `yes`: `#PermitRootLogin yes`. I removed the `#` and changed `yes` to `no`. The final line looked like this:
+- `sudo` — allows editing the file with root privileges.
 
+- `vi` — a terminal-based text editor commonly available on Linux systems.
+
+- `/etc/ssh/sshd_config` — the configuration file used by the SSH daemon.
+
+**Inside this file, locate the directive:**
+
+```bash
+PermitRootLogin
 ```
+
+**Often this line appears commented out like this:**
+
+```bash
+# PermitRootLogin yes
+```
+
+The `#` symbol means the line is commented, so the default setting applies.
+
+To disable root login, change the line to:
+
+```bash
 PermitRootLogin no
 ```
 
-#### 2. Restarting the SSH Service
-Configuration changes to a service are not applied until the service is restarted. I used `systemctl` to do this.
+This tells the SSH daemon to completely block login attempts using the root account.
+
+---
+<b
+r>
+r>
+
+# Step 2 — Restarting the SSH Service
+
+After modifying configuration files, services must be restarted for the changes to take effect.
+
+**The command used is:**
 
 ```bash
 sudo systemctl restart sshd
 ```
 
-**Command Breakdown:**
-* `systemctl`: Command-Line-Tool for managing services (daemons) in modern Linux distributions.
-* `restart`: The action I wanted `systemctl` to perform.
-* `sshd`: The name of the SSH service I wanted to restart.
+**Explanation of the command:**
 
-After completing these two steps on `stapp01`, I exited and repeated the exact same process on `stapp02` and `stapp03`.
+- `systemctl` is the command-line interface used to manage services in modern Linux systems that use **systemd**.
 
----
+- `restart` stops the service and starts it again.
 
-<br>
-<br>
+- `sshd` refers to the SSH daemon process.
 
-### Why Did I Do This? (The "What & Why")
-<a name="why-did-i-do-this-the-what--why"></a>
-Turning off direct root login is one of the most basic but powerful security steps in Linux. Here’s why:
-
-- **Stops Brute-Force Attacks** → The username root is public knowledge, so hackers and bots constantly try to guess its password. By disabling root login, I remove that target completely — now an attacker must first guess a valid username and the password.
-
-- **Adds Accountability** → Instead of everyone using the same root account, each admin logs in with their own user and uses `sudo` for admin actions. Every `sudo` command is recorded, showing who did what and when, making tracking and auditing easy.
-
-- **Encourages Safety** → Working as a normal user helps prevent accidental damage. You have to type `sudo` to gain admin rights, which forces you to stop and think before running risky commands.
+Restarting ensures that the SSH daemon reloads the updated configuration.
 
 ---
 
 <br>
 <br>
 
-### Deep Dive: The `PermitRootLogin` Directive
-<a name="deep-dive-the-permitrootlogin-directive"></a>
-The `PermitRootLogin` setting in the sshd_config file decides if the root user can log in via SSH. Key options:
+# Understanding the SSH Daemon
 
-- **`yes`** → Allows root to log in directly using a password (often default, but risky).
+The SSH server process is called **sshd**.
 
-- **`no`** → Blocks root login completely. This is the safest and what I used.
+The letter `d` stands for **daemon**.
 
-- **`prohibit-password`** (or without-password) → Root can log in only with SSH keys, not a password. Safer than yes, but not as strict as no.
+A daemon is a background process that runs continuously and waits for incoming requests. Many Linux services operate as daemons.
 
-For security, `no` is the best choice.
+**Examples include:**
+
+* `sshd` → SSH server
+* `httpd` → Apache web server
+* `dockerd` → Docker engine
+
+These services run in the background and are usually managed through the `systemctl` command.
 
 ---
 
 <br>
 <br>
 
-### Exploring the Files and Commands
-<a name="exploring-the-files-and-commands"></a>
+# Why Disabling Root SSH Login Is Important
 
-* `/etc/ssh/sshd_config`: This is the main configuration file for the SSH server. It controls everything: the SSH port, authentication methods, and user-specific rules. It’s a key file for securing the server.
-* `systemctl`: The modern tool **to manage system services** (daemons). I used it to `restart` SSH, but it can also `start`, `stop`, `reload`, `enable` (start on boot), `disable` (don’t start on boot), and check the `status` of services. 
+- **Protection Against Brute Force Attacks**: Automated bots frequently attempt to log in using the username `root`. If root login is disabled, attackers cannot directly target the most privileged account.
+
+- **Accountability and Auditing:** When administrators log in with personal accounts and use `sudo`, every privileged command is recorded in system logs.
+
+This provides clear audit trails showing who performed each action.
+
+**Example log entry:**
+
+```bash
+prashant : TTY=pts/0 ; PWD=/home/prashant ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+
+# To get the full log entry, you can check the sudo logs:
+sudo cat /var/log/auth.log | grep sudo | grep prashant # on ubuntu/debian
+
+# OR 
+sudo cat /var/log/secure | grep sudo | grep prashant # on RHEL/CentOS
+
+# On RHEL/CentOS, to check which user switched to which user and which command executed, you can check the following log:
+sudo cat /var/log/secure | grep prashant | grep 'session opened for user root'
+
+```
+
+
+- **Reduced Risk of Accidental Damage**: Working directly as root increases the risk of accidental system damage.
+
+**A mistyped command such as:**
+
+```bash
+rm -rf /
+```
+
+could destroy the entire filesystem.
+
+Using `sudo` forces administrators to intentionally elevate privileges only when necessary.
+
+---
+
+<br>
+<br>
+
+# Understanding the PermitRootLogin Directive
+
+The `PermitRootLogin` directive controls whether the root user can log in through SSH.
+
+Different values provide different levels of security.
+
+- **`yes`**
+
+```bash
+PermitRootLogin yes
+```
+
+Root can log in directly using password authentication.
+
+This is the least secure configuration.
+
+---
+
+- **`no`**
+
+```bash
+PermitRootLogin no
+```
+
+Root login through SSH is completely blocked.
+
+This is the safest configuration and commonly recommended in production environments.
+
+---
+
+
+- **`prohibit-password`**
+
+```bash
+PermitRootLogin prohibit-password
+```
+
+Root login is allowed only through **SSH keys**, not passwords.
+
+This configuration is safer than allowing password authentication but still allows automated systems to log in as root if needed.
+
+---
+
+<br>
+<br>
+
+# Additional Useful Commands
+
+**Check the SSH service status:**
+
+```bash
+systemctl status sshd
+```
+
+**Reload SSH configuration without restarting:**
+
+```bash
+sudo systemctl reload sshd
+```
+
+**Test SSH configuration for syntax errors:**
+
+```bash
+sshd -t
+```
+
+**View SSH logs:**
+
+```bash
+journalctl -u sshd
+
+# journalctl -u sshd -f # to follow logs in real-time
+
+# here journalctl command is used to view logs from the systemd journal, and the -u option filters logs for the sshd service. The -f option allows you to follow the log output in real-time, similar to tail -f.
+```
+
+---
+
+<br>
+<br>
+
+# Practical Outcome
+
+After applying the configuration change:
+
+* Direct SSH login as root is disabled
+* Administrators must log in using personal accounts
+* Privileged actions must be performed through `sudo`
+
+This configuration is one of the most basic but essential security hardening steps performed on Linux servers.
