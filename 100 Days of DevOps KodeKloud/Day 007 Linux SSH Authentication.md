@@ -1,78 +1,334 @@
-<center><h1>DevOps Day 7<br>Automation with Password-less SSH</h1></center>
+# DevOps Day 07 — Password‑less SSH Authentication (Detailed Explanation)
+
+<br>
 <br>
 
-The task involved setting up an infrastructure for automation by configuring password-less SSH access from a central `jump host` to all app servers. This was crucial to prevent automated scripts from failing when connecting to remote servers. The task introduced public key authentication, a secure, script-friendly alternative to traditional password-based logins.
+- [DevOps Day 07 — Password‑less SSH Authentication (Detailed Explanation)](#devops-day-07--passwordless-ssh-authentication-detailed-explanation)
+  - [Real Scenario](#real-scenario)
+- [Understanding the Infrastructure](#understanding-the-infrastructure)
+- [Step 1 — Generating an SSH Key Pair](#step-1--generating-an-ssh-key-pair)
+- [Why No Passphrase Was Used](#why-no-passphrase-was-used)
+- [Step 2 — Copying the Public Key to Remote Servers](#step-2--copying-the-public-key-to-remote-servers)
+- [What ssh-copy-id Does Internally](#what-ssh-copy-id-does-internally)
+- [Step 3 — Verifying Password‑less Login](#step-3--verifying-passwordless-login)
+- [How Public Key Authentication Works Internally](#how-public-key-authentication-works-internally)
+- [Why Password‑less SSH Is Secure](#why-passwordless-ssh-is-secure)
+- [Important SSH Files Involved](#important-ssh-files-involved)
+- [Common Problems During Setup](#common-problems-during-setup)
+- [Useful SSH Commands](#useful-ssh-commands)
+- [Practical Outcome](#practical-outcome)
 
-## Table of Contents
-- [Table of Contents](#table-of-contents)
-  - [The Task](#the-task)
-  - [My Step-by-Step Solution](#my-step-by-step-solution)
-    - [Step 1: Generate an SSH Key Pair](#step-1-generate-an-ssh-key-pair)
-    - [Step 2: Copy the Public Key to Each App Server](#step-2-copy-the-public-key-to-each-app-server)
-    - [Step 3: Verification](#step-3-verification)
-  - [Why Did I Do This? (The "What \& Why")](#why-did-i-do-this-the-what--why)
-  - [Deep Dive: How Public Key Authentication Works](#deep-dive-how-public-key-authentication-works)
-  - [Common Pitfalls](#common-pitfalls)
-  - [Exploring the Commands Used](#exploring-the-commands-used)
+
+<br>
+<br>
+
+## Real Scenario
+
+- In DevOps environments, automation tools frequently connect to remote servers to deploy applications, run configuration scripts, collect logs, or perform health checks. These operations often occur without human interaction.
+
+- If remote access required manual password entry every time, automation would fail. Scripts cannot type passwords, and storing plaintext passwords inside scripts would create serious security risks.
+
+- To solve this problem, Linux systems support **SSH public key authentication**, which allows machines to authenticate securely without passwords.
+
+- In this task, the goal was to configure the `thor` user on a central **jump host** so it could connect to three application servers without needing to enter a password.
 
 ---
 
 <br>
 <br>
 
-### The Task
-<a name="the-task"></a>
-My goal was to configure the `thor` user on the `jump_host` to be able to SSH into all three app servers without needing a password. The connections had to be made to the specific sudo user on each server:
-- `thor@jump_host` -> `tony@stapp01`
-- `thor@jump_host` -> `steve@stapp02`
-- `thor@jump_host` -> `banner@stapp03`
+# Understanding the Infrastructure
 
----
+The environment contained four systems.
 
-<br>
-<br>
-
-### My Step-by-Step Solution
-<a name="my-step-by-step-solution"></a>
-- The entire process was performed as the `thor` user on the `jump_host`.
-
-#### Step 1: Generate an SSH Key Pair
-- First, I needed to create a unique identity for the `thor` user. This is done by generating a pair of cryptographic keys: one private, one public.
 ```bash
-# Run from the jump_host as user thor
+jump_host
+stapp01
+stapp02
+stapp03
+```
+
+The connections needed to work as follows:
+
+```bash
+thor@jump_host  →  tony@stapp01
+thor@jump_host  →  steve@stapp02
+thor@jump_host  →  banner@stapp03
+```
+
+- The `jump_host` acts as a central access machine used by administrators or automation systems to reach internal servers.
+
+- This architecture is commonly used in production environments because it limits direct external access to internal servers.
+
+---
+
+<br>
+<br>
+
+# Step 1 — Generating an SSH Key Pair
+
+The first step was creating a cryptographic identity for the `thor` user.
+
+```bash
 ssh-keygen -t rsa
 ```
-I pressed `Enter` three times to accept the default file location (`~/.ssh/id_rsa`), to set no passphrase (which is essential for automation), and to confirm.
 
-#### Step 2: Copy the Public Key to Each App Server
-- Next, I distributed my public key to each of the target servers. The `ssh-copy-id` command is built specifically for this and is the most reliable method. It automatically appends the key to the `~/.ssh/authorized_keys` file on the remote server and sets the correct file permissions.
+This command generates a **pair of cryptographic keys**.
 
-I was prompted for each user's password **one final time** to authorize the key transfer.
+When executed, SSH creates two files inside the user's `.ssh` directory.
+
 ```bash
-# Copy key to App Server 1
+~/.ssh/id_rsa
+~/.ssh/id_rsa.pub
+```
+
+---
+
+- **Private Key**
+
+```bash
+~/.ssh/id_rsa
+```
+
+- The private key must remain secret and should never be shared with other systems.
+
+- This key proves the identity of the user during authentication.
+
+---
+
+- **Public Key**
+
+```bash
+~/.ssh/id_rsa.pub
+```
+
+- The public key can be safely shared with remote servers.
+
+- It acts like a lock that allows the matching private key to authenticate.
+
+---
+
+<br>
+<br>
+
+# Why No Passphrase Was Used
+
+- During key generation the command prompts for a passphrase.
+
+- In personal environments adding a passphrase increases security.
+
+- However, automation scripts cannot enter passphrases.
+
+Therefore automation accounts typically leave the passphrase empty so SSH connections can occur automatically.
+
+---
+
+<br>
+<br>
+
+# Step 2 — Copying the Public Key to Remote Servers
+
+- Once the key pair exists, the public key must be installed on each remote server.
+
+- The easiest way to perform this task is with the `ssh-copy-id` command.
+
+Example:
+
+```bash
 ssh-copy-id tony@stapp01
-
-# Copy key to App Server 2
 ssh-copy-id steve@stapp02
-
-# Copy key to App Server 3
 ssh-copy-id banner@stapp03
 ```
 
-#### Step 3: Verification
-- The final and most important step was to test the password-less connection to each server.
+During this step the password is requested **one final time** so the remote server can authorize the key installation.
+
+---
+
+<br>
+<br>
+
+# What ssh-copy-id Does Internally
+
+The command performs several actions automatically.
+
+1. It connects to the remote server using SSH.
+2. It creates the `.ssh` directory in the user's home folder if it does not exist.
+3. It appends the public key to the file:
+
+```bash
+~/.ssh/authorized_keys
+```
+
+4. It sets strict permissions required by SSH security rules.
+
+**Example permissions:**
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+```
+
+If these permissions are incorrect, SSH will refuse key authentication.
+
+---
+
+<br>
+<br>
+
+# Step 3 — Verifying Password‑less Login
+
+After copying the keys, SSH connections should work without passwords.
+
+Testing the connection:
+
 ```bash
 ssh tony@stapp01
-# I was logged in instantly without a password.
-exit
-
 ssh steve@stapp02
-# Logged in instantly.
-exit
-
 ssh banner@stapp03
-# Logged in instantly.
-exit
+```
+
+If configuration is correct, the login occurs immediately.
+
+The SSH client uses the private key automatically during authentication.
+
+---
+
+<br>
+<br>
+
+# How Public Key Authentication Works Internally
+
+Public key authentication follows a **challenge‑response mechanism**.
+
+The process works as follows.
+
+---
+
+**Step 1 — Connection Request**: The SSH client contacts the remote server and announces that it wants to authenticate using a public key.
+
+---
+
+**Step 2 — Server Challenge**: The SSH server checks whether the user's public key exists inside:
+
+```bash
+~/.ssh/authorized_keys
+```
+
+If the key exists, the server generates a random challenge message.
+
+This message is encrypted using the public key.
+
+---
+
+**Step 3 — Client Decryption**
+- Only the private key stored on the client machine can decrypt this message.
+- The SSH client decrypts the message using the private key.
+
+---
+
+**Step 4 — Proof of Ownership**
+
+- The decrypted response is sent back to the server.
+
+- If the server verifies the response successfully, it proves the client owns the private key.
+
+- Access is granted.
+
+---
+
+<br>
+<br>
+
+# Why Password‑less SSH Is Secure
+
+- Even though it removes passwords from the login process, this method is actually **more secure**.
+
+**Reasons include:**
+
+* Keys are extremely long and difficult to brute‑force
+* Private keys never leave the client machine
+* No password travels across the network
+
+---
+
+<br>
+<br>
+
+# Important SSH Files Involved
+
+**Client Side**
+
+```bash
+~/.ssh/id_rsa
+~/.ssh/id_rsa.pub
+```
+
+---
+
+**Server Side**
+
+```bash
+~/.ssh/authorized_keys
+```
+
+This file stores public keys allowed to authenticate.
+
+---
+
+<br>
+<br>
+
+# Common Problems During Setup
+
+**Incorrect Permissions**
+- SSH requires strict permission rules.
+
+**Example correct configuration:**
+
+```bash
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+```
+
+---
+
+**Copying the Wrong Key**
+- Only the **public key** should be copied to servers.
+- The private key must remain secret.
+
+---
+
+**Using Passphrases in Automation**: Passphrases prevent automated login because scripts cannot unlock private keys.
+
+---
+
+<br>
+<br>
+
+# Useful SSH Commands
+
+**Generate modern ED25519 key:**
+
+```bash
+ssh-keygen -t ed25519
+```
+
+**View existing SSH keys:**
+
+```bash
+ls ~/.ssh
+```
+
+**Test connection with verbose output:**
+
+```bash
+ssh -v user@host
+```
+
+**Manually add public key to authorized_keys:**
+
+```bash
+cat id_rsa.pub >> ~/.ssh/authorized_keys
 ```
 
 ---
@@ -80,45 +336,12 @@ exit
 <br>
 <br>
 
-### Why Did I Do This? (The "What & Why")
-<a name="why-did-i-do-this-the-what--why"></a>
--   **Password-less is still secure**: Instead of a password that could be guessed or stolen, this method uses long, complex cryptographic keys.
--   **Public Key Authentication**: Works like a lock and key:
-    -   **Private Key (`~/.ssh/id_rsa`)**: Your secret key, kept on the machine you connect from (never shared).
-    -   **Public Key (`~/.ssh/id_rsa.pub`)**: The lock, copied to any machine you want to access.
--   **Automation Needs**: Scripts must run without human input. Passwords would stop a script on each server, but public key authentication lets scripts connect automatically.
+# Practical Outcome
 
----
+After completing this configuration:
 
-<br>
-<br>
+* The `thor` user can SSH into all application servers without entering passwords
+* Automation scripts can connect to servers reliably
+* Infrastructure management becomes easier and more secure
 
-### Deep Dive: How Public Key Authentication Works
-<a name="deep-dive-how-public-key-authentication-works"></a>
-It’s a secure challenge-response process — no passwords are sent over the network.
-1. **Connection Request** → My `jump_host` contacts `stapp01`, saying: “I’m user tony and want to log in with a public key.”
-2. **The Challenge** → `stapp01` finds my public key in `~/.ssh/authorized_keys`, creates a random one-time message, encrypts it with my public key, and sends it back.
-3. **The Response** → Only my private key (on the `jump_host`) can decrypt this message. My machine decrypts it.
-4. **Proof of Identity** → My `jump_host` sends the decrypted message back to `stapp01`.
-5. **Access Granted** → `stapp01` confirms the message was decrypted correctly, proving I own the private key. Access is granted without ever using a password.
-
----
-
-<br>
-<br>
-
-### Common Pitfalls
-<a name="common-pitfalls"></a>
--   **Setting a Passphrase:** Adding a passphrase is secure for personal use, but breaks automation. Scripts can’t enter a passphrase, so service accounts must leave it empty.
--   **Incorrect Permissions:** SSH is strict. If the `.ssh` folder or `authorized_keys` file has wrong permissions, the keys won’t work. Using `ssh-copy-id` fixes this automatically.
--   **Copying the Wrong Key:** Never copy your private key (`id_rsa`). Only the public key (`id_rsa.pub`) should be shared.
-
----
-
-<br>
-<br>
-
-### Exploring the Commands Used
-<a name="exploring-the-commands-used"></a>
--   `ssh-keygen -t rsa`: Creates a new SSH key pair. `-t rsa` sets the encryption type to RSA, a widely supported standard.
--   `ssh-copy-id [user]@[host]`: It connects to the remote host, adds your public key to the remote user’s `authorized_keys` file, and sets the correct permissions automatically.
+Password‑less SSH authentication is a fundamental building block for many DevOps tools such as **Ansible, Jenkins, and CI/CD pipelines** because it enables secure automated access across multiple servers.
