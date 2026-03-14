@@ -166,6 +166,8 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: pod-devops
+  labels:
+    app: web-devops
 spec:
   containers:
   - name: container-devops
@@ -279,3 +281,97 @@ This capability is critical for many real-world systems such as:
 * Logging systems
 
 Because of this design, Kubernetes applications remain both **stateless in deployment** and **stateful in storage**, allowing infrastructure to scale dynamically while preserving application data.
+
+---
+
+# Troubleshooting: 403 Forbidden from Nginx
+
+While testing the service, the browser may display **403 Forbidden** instead of the Nginx welcome page. This situation often causes confusion because it appears as if the web server is not working. In reality, the Nginx server is running correctly, but it cannot read any web content from its document root.
+
+The Nginx container serves web files from the directory:
+
+```
+/usr/share/nginx/html
+```
+
+Inside the container image, this directory normally contains a default file called **index.html**, which is the welcome page displayed when Nginx starts.
+
+However, in this task the directory is mounted from the **PersistentVolume** using the PVC. When Kubernetes mounts a volume to a path inside a container, the mounted storage **replaces the original contents of that directory**. This means the default Nginx files that originally existed inside the image are no longer visible.
+
+The PersistentVolume in this task uses a **hostPath** directory:
+
+```
+/mnt/dba
+```
+
+If this directory is empty, then the container's web root becomes empty as well. Since there is no **index.html** file and directory listing is disabled in Nginx by default, the web server returns the response:
+
+```
+403 Forbidden
+```
+
+---
+
+# Quick Fix
+
+The solution is simply to create an **index.html** file inside the mounted directory.
+
+Access the running pod:
+
+```bash
+kubectl exec -it pod-devops -- bash
+```
+
+Create the web page file:
+
+```bash
+echo "Welcome to DevOps Web Server" > /usr/share/nginx/html/index.html
+```
+
+Exit the container:
+
+```bash
+exit
+```
+
+After creating this file, refresh the browser.
+
+---
+
+# Verify the Volume Mount
+
+To confirm that the PersistentVolume is correctly mounted inside the container, list the files in the web root:
+
+```bash
+kubectl exec -it pod-devops -- ls /usr/share/nginx/html
+```
+
+If the directory was previously empty, it would show no files. After creating **index.html**, the file should appear in the listing.
+
+---
+
+# Expected Result
+
+Once the **index.html** file exists inside the mounted volume, visiting the service endpoint will display the webpage instead of the error.
+
+Example:
+
+```
+http://NODE-IP:30008
+```
+
+The browser should now display:
+
+```
+Welcome to DevOps Web Server
+```
+
+---
+
+# Important Concept
+
+Whenever a volume is mounted inside a container, the mounted storage completely **overrides the existing directory inside the container image**. Any files originally present in the container image at that location will disappear unless those files also exist in the mounted storage.
+
+Because of this behavior, applications that depend on existing files (such as Nginx expecting `index.html`) may return errors if the mounted storage directory is empty.
+
+Understanding this behavior is essential when designing Kubernetes workloads that rely on persistent storage.
